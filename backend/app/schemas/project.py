@@ -1,7 +1,8 @@
-from pydantic import BaseModel, field_validator
+import re
 from datetime import datetime
 from uuid import UUID
-import re
+
+from pydantic import BaseModel, field_validator
 
 
 class ProjectBase(BaseModel):

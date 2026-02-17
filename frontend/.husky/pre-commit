@@ -1,54 +1,23 @@
 #!/bin/sh
-. "$(dirname "$0")/_/husky.sh"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
+cd frontend || exit 1
 
-echo "${YELLOW}Running pre-commit checks...${NC}"
+echo "Running pre-commit checks..."
 
-# Step 1: Format with Prettier
-echo "${YELLOW}1. Formatting code with Prettier...${NC}"
-pnpm prettier --write . || {
-  echo "${RED}✗ Prettier formatting failed${NC}"
-  exit 1
-}
-echo "${GREEN}✓ Prettier formatting passed${NC}"
+echo "1. Formatting with Prettier..."
+pnpm prettier --write . || { echo "✗ Prettier failed"; exit 1; }
+echo "✓ Prettier passed"
 
-# Step 2: Lint and fix with ESLint
-echo "${YELLOW}2. Linting and fixing with ESLint...${NC}"
-pnpm eslint . --fix || {
-  echo "${RED}✗ ESLint check failed${NC}"
-  exit 1
-}
-echo "${GREEN}✓ ESLint check passed${NC}"
+echo "2. Linting with ESLint..."
+pnpm eslint . --fix || { echo "✗ ESLint failed"; exit 1; }
+echo "✓ ESLint passed"
 
-# Step 3: Type check with TypeScript
-echo "${YELLOW}3. Running TypeScript type check...${NC}"
-pnpm tsc --noEmit || {
-  echo "${RED}✗ TypeScript type check failed${NC}"
-  exit 1
-}
-echo "${GREEN}✓ TypeScript type check passed${NC}"
+echo "3. TypeScript type check..."
+pnpm tsc --noEmit || { echo "✗ Type check failed"; exit 1; }
+echo "✓ TypeScript passed"
 
-# Step 4: Run tests
-echo "${YELLOW}4. Running tests...${NC}"
-pnpm test:run || {
-  echo "${RED}✗ Tests failed${NC}"
-  exit 1
-}
-echo "${GREEN}✓ Tests passed${NC}"
+echo "4. Running tests..."
+pnpm test:run || { echo "✗ Tests failed"; exit 1; }
+echo "✓ Tests passed"
 
-# Step 5: Stage lint-staged changes (format + lint fixes)
-echo "${YELLOW}5. Running lint-staged on changes...${NC}"
-pnpm lint-staged || {
-  echo "${RED}✗ lint-staged check failed${NC}"
-
-  exit 1
-}
-echo "${GREEN}✓ lint-staged check passed${NC}"
-
-echo "${GREEN}All pre-commit checks passed! ✓${NC}"
-exit 0
+echo "All pre-commit checks passed! ✓"

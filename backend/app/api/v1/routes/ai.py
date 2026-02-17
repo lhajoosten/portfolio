@@ -1,7 +1,8 @@
 from fastapi import APIRouter
 from fastapi.responses import StreamingResponse
-from pydantic import BaseModel
 from openai import AsyncOpenAI
+from pydantic import BaseModel
+
 from app.core.config import settings
 
 router = APIRouter(prefix="/ai", tags=["ai"])

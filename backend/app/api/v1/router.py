@@ -1,5 +1,6 @@
 from fastapi import APIRouter
-from app.api.v1.routes import projects, ai
+
+from app.api.v1.routes import ai, projects
 
 api_router = APIRouter()
 

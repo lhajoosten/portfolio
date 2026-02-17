@@ -1,8 +1,10 @@
-from sqlalchemy import String, Text, Boolean, ARRAY
-from sqlalchemy.orm import mapped_column, Mapped
-from app.db.base import Base, TimestampMixin
 import uuid
+
+from sqlalchemy import ARRAY, Boolean, String, Text
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import Mapped, mapped_column
+
+from app.db.base import Base, TimestampMixin
 
 
 class Project(Base, TimestampMixin):
