@@ -27,7 +27,7 @@ The pre-commit hook (`pre-commit`) runs the following checks in order:
      - No console.log in production code (warnings)
      - No debugger statements
 
-### 3. **TypeScript Type Checking**
+### 3. **TypeScript Type Checking** 
    - Runs `tsc --noEmit` to verify type safety
    - Catches type errors before they reach the codebase
    - Does not emit any files, only checks for errors
