@@ -1,0 +1,129 @@
+import reactRefresh from "eslint-plugin-react-refresh";
+import reactCompiler from "eslint-plugin-react-compiler";
+import react19Upgrade from "eslint-plugin-react-19-upgrade";
+import globals from "globals";
+import tsParser from "@typescript-eslint/parser";
+import reactPlugin from "eslint-plugin-react";
+import reactHooksPlugin from "eslint-plugin-react-hooks";
+import tseslint from "typescript-eslint";
+import eslint from "@eslint/js";
+import eslintPluginBetterTailwindcss from "eslint-plugin-better-tailwindcss";
+
+export default tseslint.config(
+  {
+    ignores: [
+      "**/dist/",
+      "**/node_modules/",
+      "eslint.config.mjs",
+      "**/openapi-ts.config.ts",
+      ".husky/",
+      "src/openapi/**/*",
+      "src/routeTree.gen.ts",
+    ],
+  },
+  eslint.configs.recommended,
+  tseslint.configs.recommended,
+  reactRefresh.configs.vite,
+  reactPlugin.configs.flat.recommended,
+  reactCompiler.configs.recommended,
+  reactHooksPlugin.configs["recommended-latest"],
+  {
+    plugins: {
+      "react-19-upgrade": react19Upgrade,
+      "better-tailwindcss": eslintPluginBetterTailwindcss,
+    },
+    languageOptions: {
+      globals: {
+        ...globals.browser,
+        process: true,
+      },
+
+      parser: tsParser,
+      ecmaVersion: "latest",
+      sourceType: "module",
+
+      parserOptions: {
+        project: ["./tsconfig.json", "./tsconfig.node.json"],
+        tsconfigRootDir: import.meta.dirname,
+      },
+    },
+
+    settings: {
+      "better-tailwindcss": {
+        entryPoint: "src/index.css",
+      },
+      react: {
+        createClass: "createReactClass",
+        pragma: "React",
+        fragment: "Fragment",
+        version: "detect",
+        flowVersion: "0.53",
+      },
+
+      propWrapperFunctions: [],
+      componentWrapperFunctions: [],
+      formComponents: [],
+      linkComponents: [],
+    },
+
+    rules: {
+      ...eslintPluginBetterTailwindcss.configs["recommended-warn"].rules,
+      ...eslintPluginBetterTailwindcss.configs["recommended-error"].rules,
+      "better-tailwindcss/enforce-consistent-line-wrapping": "off",
+      "better-tailwindcss/no-unregistered-classes": [
+        "warn",
+        {
+          ignore: ["^prose"],
+        },
+      ],
+      "react-refresh/only-export-components": [
+        "warn",
+        {
+          allowConstantExport: true,
+        },
+      ],
+
+      "@typescript-eslint/no-misused-promises": [
+        "error",
+        {
+          checksVoidReturn: false,
+        },
+      ],
+      "react/react-in-jsx-scope": "off",
+      "react-19-upgrade/no-default-props": "error",
+      "react-19-upgrade/no-prop-types": "warn",
+      "react-19-upgrade/no-legacy-context": "error",
+      "react-19-upgrade/no-string-refs": "error",
+      "react-19-upgrade/no-factories": "error",
+      "react-compiler/react-compiler": "error",
+      "@typescript-eslint/no-unused-vars": [
+        "warn",
+        {
+          argsIgnorePattern: "^_",
+          varsIgnorePattern: "^_",
+        },
+      ],
+      "no-restricted-syntax": [
+        "error",
+        {
+          selector:
+            "LogicalExpression[operator='||'][left.callee.object.name='m'], LogicalExpression[operator='??'][left.callee.object.name='m']",
+          message:
+            "Do not use fallback values with translations. Use m.key() directly instead of m.key() || 'fallback'.",
+        },
+        {
+          selector: "CallExpression[optional=true][callee.object.name='m']",
+          message:
+            "Do not use optional chaining on translation calls. Use m.key() instead of m.key?.().",
+        },
+      ],
+    },
+  },
+  {
+    files: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
+    rules: {
+      "@typescript-eslint/no-explicit-any": "off",
+      "react/display-name": "off",
+    },
+  },
+);

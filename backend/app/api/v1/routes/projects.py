@@ -18,7 +18,7 @@ async def get_projects(
 ):
     query = select(Project).order_by(Project.order, Project.created_at.desc())
     if published_only:
-        query = query.where(Project.published == True)
+        query = query.where(Project.published)
     result = await db.execute(query)
     return result.scalars().all()
 
@@ -26,9 +26,7 @@ async def get_projects(
 @router.get("/featured", response_model=list[ProjectResponse])
 async def get_featured_projects(db: AsyncSession = Depends(get_db)):
     result = await db.execute(
-        select(Project)
-        .where(Project.featured == True, Project.published == True)
-        .order_by(Project.order)
+        select(Project).where(Project.featured, Project.published).order_by(Project.order)
     )
     return result.scalars().all()
 
