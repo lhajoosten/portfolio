@@ -1,0 +1,80 @@
+services:
+    # ===========================================================================
+    # DATABASE
+    # ===========================================================================
+    db:
+        image: pgvector/pgvector:pg16
+        container_name: portfolio_db
+        restart: unless-stopped
+        environment:
+            POSTGRES_USER: ${POSTGRES_USER:-portfolio}
+            POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-portfolio}
+            POSTGRES_DB: ${POSTGRES_DB:-portfolio}
+        ports:
+            - "5432:5432"
+        volumes:
+            - postgres_data:/var/lib/postgresql/data
+        healthcheck:
+            test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-portfolio}"]
+            interval: 5s
+            timeout: 5s
+            retries: 10
+
+    # ===========================================================================
+    # BACKEND
+    # ===========================================================================
+    backend:
+        build:
+            context: ./backend
+            dockerfile: Dockerfile.dev
+        container_name: portfolio_backend
+        restart: unless-stopped
+        env_file:
+            - .env
+        environment:
+            DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-portfolio}:${POSTGRES_PASSWORD:-portfolio}@db:5432/${POSTGRES_DB:-portfolio}
+        ports:
+            - "8000:8000"
+        depends_on:
+            db:
+                condition: service_healthy
+        develop:
+            watch:
+                - action: sync
+                  path: ./backend
+                  target: /app
+                  ignore:
+                      - __pycache__/
+                      - "*.pyc"
+                      - .venv/
+                - action: rebuild
+                  path: ./backend/pyproject.toml
+
+    # ===========================================================================
+    # FRONTEND
+    # ===========================================================================
+    frontend:
+        build:
+            context: ./frontend
+            dockerfile: Dockerfile.dev
+        container_name: portfolio_frontend
+        restart: unless-stopped
+        env_file:
+            - .env
+        ports:
+            - "3000:3000"
+        depends_on:
+            - backend
+        develop:
+            watch:
+                - action: sync
+                  path: ./frontend/src
+                  target: /app/src
+                - action: sync
+                  path: ./frontend/index.html
+                  target: /app/index.html
+                - action: rebuild
+                  path: ./frontend/package.json
+
+volumes:
+    postgres_data:

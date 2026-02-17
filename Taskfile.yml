@@ -1,0 +1,194 @@
+version: "3"
+
+vars:
+    FRONTEND_DIR: ./frontend
+    BACKEND_DIR: ./backend
+
+tasks:
+    # =============================================================================
+    # SETUP
+    # =============================================================================
+    setup:
+        desc: Full project setup (install all deps)
+        cmds:
+            - task: setup:frontend
+            - task: setup:backend
+
+    setup:frontend:
+        desc: Install frontend dependencies
+        dir: "{{.FRONTEND_DIR}}"
+        cmds:
+            - pnpm install
+
+    setup:backend:
+        desc: Install backend dependencies
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv sync
+
+    # =============================================================================
+    # DEV — Docker (single command, everything runs with watch)
+    # =============================================================================
+    dev:
+        desc: Start full dev environment via Docker with live reload (recommended)
+        cmds:
+            - docker compose watch
+
+    dev:down:
+        desc: Stop all Docker dev services
+        cmds:
+            - docker compose down
+
+    # =============================================================================
+    # DEV — Local (without Docker, requires local db)
+    # =============================================================================
+    dev:frontend:
+        desc: Start frontend dev server locally
+        dir: "{{.FRONTEND_DIR}}"
+        cmds:
+            - pnpm dev
+
+    dev:backend:
+        desc: Start backend dev server locally
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
+    # =============================================================================
+    # DATABASE
+    # =============================================================================
+    db:up:
+        desc: Start Postgres with pgvector only
+        cmds:
+            - docker compose up db -d
+
+    db:down:
+        desc: Stop database
+        cmds:
+            - docker compose down
+
+    db:reset:
+        desc: Wipe and restart database
+        cmds:
+            - docker compose down -v
+            - docker compose up db -d
+
+    db:migrate:
+        desc: Run all pending migrations
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run alembic upgrade head
+
+    db:migration:
+        desc: Create a new migration — usage task db:migration -- "your message"
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run alembic revision --autogenerate -m "{{.CLI_ARGS}}"
+
+    db:rollback:
+        desc: Rollback last migration
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run alembic downgrade -1
+
+    db:history:
+        desc: Show migration history
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run alembic history --verbose
+
+    db:shell:
+        desc: Open psql shell
+        cmds:
+            - docker exec -it portfolio_db psql -U portfolio -d portfolio
+
+    # =============================================================================
+    # CODE QUALITY
+    # =============================================================================
+    lint:
+        desc: Lint everything
+        cmds:
+            - task: lint:frontend
+            - task: lint:backend
+
+    lint:frontend:
+        desc: Lint frontend
+        dir: "{{.FRONTEND_DIR}}"
+        cmds:
+            - pnpm lint
+
+    lint:backend:
+        desc: Lint backend with ruff
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run ruff check .
+            - uv run ruff format --check .
+
+    format:
+        desc: Format everything
+        cmds:
+            - task: format:frontend
+            - task: format:backend
+
+    format:frontend:
+        desc: Format frontend
+        dir: "{{.FRONTEND_DIR}}"
+        cmds:
+            - pnpm format
+
+    format:backend:
+        desc: Format backend with ruff
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run ruff format .
+            - uv run ruff check --fix .
+
+    typecheck:
+        desc: Typecheck everything
+        cmds:
+            - task: typecheck:frontend
+            - task: typecheck:backend
+
+    typecheck:frontend:
+        dir: "{{.FRONTEND_DIR}}"
+        cmds:
+            - pnpm typecheck
+
+    typecheck:backend:
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run mypy app/
+
+    # =============================================================================
+    # GENERATE
+    # =============================================================================
+    generate:client:
+        desc: Generate frontend API client from OpenAPI spec (Hey API)
+        cmds:
+            - cd {{.FRONTEND_DIR}} && pnpm generate:client
+
+    # =============================================================================
+    # UTILS
+    # =============================================================================
+    clean:
+        desc: Clean build artifacts
+        cmds:
+            - rm -rf {{.FRONTEND_DIR}}/dist
+            - rm -rf {{.FRONTEND_DIR}}/.tanstack
+            - find {{.BACKEND_DIR}} -type d -name __pycache__ -exec rm -rf {} +
+            - find {{.BACKEND_DIR}} -name "*.pyc" -delete
+
+    logs:
+        desc: Follow Docker logs for all services
+        cmds:
+            - docker compose logs -f
+
+    logs:backend:
+        desc: Follow backend logs
+        cmds:
+            - docker compose logs -f backend
+
+    logs:frontend:
+        desc: Follow frontend logs
+        cmds:
+            - docker compose logs -f frontend
