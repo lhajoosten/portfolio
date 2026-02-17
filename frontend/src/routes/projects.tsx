@@ -11,7 +11,7 @@ function ProjectsPage() {
       <p className="mb-12 text-zinc-400">Things I've built.</p>
       <div className="grid gap-6 sm:grid-cols-2">
         {/* Will be populated via TanStack Query + API */}
-        <p className="text-zinc-600 text-sm">No projects yet.</p>
+        <p className="text-sm text-zinc-600">No projects yet.</p>
       </div>
     </div>
   );

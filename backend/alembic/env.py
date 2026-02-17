@@ -6,16 +6,14 @@ from sqlalchemy import pool
 from sqlalchemy.engine import Connection
 from sqlalchemy.ext.asyncio import async_engine_from_config
 
-# Import all models to register them with Base.metadata
+# Import all models so Alembic autogenerate can detect them
 import app.models  # noqa: F401
 from app.core.config import settings
-
-# Import your models here so autogenerate can detect them
 from app.db.base import Base
 
 config = context.config
 
-# Override sqlalchemy.url from settings
+# Pull DATABASE_URL from settings — overrides alembic.ini value
 config.set_main_option("sqlalchemy.url", settings.DATABASE_URL)
 
 if config.config_file_name is not None:

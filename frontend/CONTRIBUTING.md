@@ -22,6 +22,7 @@ git checkout -b feature/your-feature-name
 ```
 
 Follow naming conventions:
+
 - `feature/` - New features
 - `fix/` - Bug fixes
 - `refactor/` - Code improvements
@@ -57,11 +58,11 @@ pnpm dev
 Add tests for your code in `src/__tests__/`:
 
 ```typescript
-import { describe, it, expect } from 'vitest';
-import { yourFunction } from '../path-to-module';
+import { describe, it, expect } from "vitest";
+import { yourFunction } from "../path-to-module";
 
-describe('YourComponent', () => {
-  it('should do something', () => {
+describe("YourComponent", () => {
+  it("should do something", () => {
     const result = yourFunction();
     expect(result).toBe(expectedValue);
   });
@@ -172,6 +173,7 @@ const result = condition ? handleA() : otherCondition ? handleB() : handleC();
 ### Formatting
 
 All code is automatically formatted with Prettier:
+
 - Line width: 100 characters
 - Tab width: 2 spaces
 - Double quotes
@@ -241,12 +243,14 @@ pnpm test:coverage     # With coverage report
 ### Rules You'll Encounter
 
 **Must Fix (Errors):**
+
 - Using `var` instead of `const`/`let`
 - Using `==` instead of `===`
 - Unused variables
 - Missing hook dependencies
 
 **Should Fix (Warnings):**
+
 - `console.log` in code (use sparingly)
 - Functions too complex
 - Too much nesting
@@ -349,6 +353,7 @@ pnpm format
 ## Questions?
 
 See:
+
 - `.husky/README.md` - Pre-commit hook details
 - `HUSKY_SETUP.md` - Setup information
 - `PRE_COMMIT_SUMMARY.md` - Configuration summary

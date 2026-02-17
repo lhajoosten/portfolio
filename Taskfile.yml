@@ -192,3 +192,10 @@ tasks:
         desc: Follow frontend logs
         cmds:
             - docker compose logs -f frontend
+
+    commit:
+        desc: Commit changes to Git (needs -m <message>)
+        cmds:
+            - git add .
+            - git commit -m "{message}"
+            - git push origin

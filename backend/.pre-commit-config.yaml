@@ -1,0 +1,29 @@
+fail_fast: true
+
+repos:
+    - repo: https://github.com/pre-commit/pre-commit-hooks
+      rev: v5.0.0
+      hooks:
+          - id: mixed-line-ending
+            args: ["--fix=lf"]
+          - id: end-of-file-fixer
+
+    - repo: local
+      hooks:
+          - id: ruff
+            entry: "uvicorn run ruff check --respect-gitignore --fix"
+            language: system
+            name: "Run ruff linter"
+            types: [python]
+            exclude: "\\.mako$"
+          - id: ruff-format
+            entry: "uvicorn run ruff format --respect-gitignore"
+            language: system
+            name: "Run ruff formatter"
+            types: [python]
+            exclude: "\\.mako$"
+          - id: pytest
+            entry: "poetry run pytest -v -n 4 --ignore=tests/integration"
+            language: system
+            name: "Run tests"
+            pass_filenames: false
