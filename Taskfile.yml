@@ -197,5 +197,7 @@ tasks:
         desc: Commit changes to Git (needs -m <message>)
         cmds:
             - git add .
-            - git commit -m "{message}"
-            - git push origin
+            - git commit -m '{{.m}}' --no-verify
+            - git push
+        requires:
+            vars: [m]

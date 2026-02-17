@@ -11,19 +11,19 @@ repos:
     - repo: local
       hooks:
           - id: ruff
-            entry: "uvicorn run ruff check --respect-gitignore --fix"
+            entry: uv run ruff check --respect-gitignore --fix
             language: system
             name: "Run ruff linter"
             types: [python]
             exclude: "\\.mako$"
           - id: ruff-format
-            entry: "uvicorn run ruff format --respect-gitignore"
+            entry: uv run ruff format --respect-gitignore
             language: system
             name: "Run ruff formatter"
             types: [python]
             exclude: "\\.mako$"
           - id: pytest
-            entry: "poetry run pytest -v -n 4 --ignore=tests/integration"
+            entry: uv run pytest -v --ignore=tests/integration
             language: system
             name: "Run tests"
             pass_filenames: false

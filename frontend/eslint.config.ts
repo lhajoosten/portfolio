@@ -6,14 +6,17 @@ import tseslint from "typescript-eslint";
 
 export default tseslint.config(
   {
-    // Ignore generated files — never lint these
     ignores: [
       "dist",
       "build",
+      "coverage",
       "src/lib/api/**",
       "src/routeTree.gen.ts",
-      "coverage",
       "*.generated.ts",
+      "eslint.config.ts",
+      "vite.config.ts",
+      "vitest.config.ts",
+      "openapi-ts.config.ts",
     ],
   },
   {
@@ -22,6 +25,10 @@ export default tseslint.config(
     languageOptions: {
       ecmaVersion: 2022,
       globals: globals.browser,
+      parserOptions: {
+        projectService: true,
+        tsconfigRootDir: import.meta.dirname,
+      },
     },
     plugins: {
       "react-hooks": reactHooks,
@@ -51,6 +58,7 @@ export default tseslint.config(
         { prefer: "type-imports", fixStyle: "inline-type-imports" },
       ],
       "@typescript-eslint/no-explicit-any": "warn",
+      // These 3 require parserOptions.projectService to be set
       "@typescript-eslint/no-floating-promises": "warn",
       "@typescript-eslint/no-misused-promises": "warn",
       "@typescript-eslint/await-thenable": "warn",
@@ -73,7 +81,6 @@ export default tseslint.config(
       "no-eval": "error",
       "no-new-func": "error",
       "require-await": "warn",
-      "no-return-await": "warn",
       "no-unused-expressions": "warn",
     },
   },
