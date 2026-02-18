@@ -1,8 +1,8 @@
 # =============================================================================
 # Portfolio — Root .gitignore
 #
-# This file covers monorepo-level ignores only.
-# Each subproject (backend/, frontend/) maintains its own .gitignore for
+# Covers monorepo-level ignores only.
+# Each subproject (backend/, frontend/) has its own .gitignore for
 # language/framework-specific patterns.
 # =============================================================================
 
@@ -12,6 +12,11 @@
 .env
 .env.*
 !.env.example
+
+# -----------------------------------------------------------------------------
+# Root-level node_modules (husky install via `pnpm install` at repo root)
+# -----------------------------------------------------------------------------
+node_modules/
 
 # -----------------------------------------------------------------------------
 # OS artefacts

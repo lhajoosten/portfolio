@@ -10,11 +10,12 @@ tasks:
     # SETUP
     # =============================================================================
     setup:
-        desc: Full project setup — install all deps (frontend + backend + docs)
+        desc: Full project setup — install all deps (frontend + backend + docs + hooks)
         cmds:
             - task: setup:frontend
             - task: setup:backend
             - task: setup:docs
+            - task: setup:hooks
 
     setup:frontend:
         desc: Install frontend dependencies
@@ -29,10 +30,19 @@ tasks:
             - uv sync --all-groups
 
     setup:docs:
-        desc: Install MkDocs documentation dependencies
-        dir: "{{.DOCS_DIR}}"
+        desc: Install MkDocs documentation dependencies (managed via backend pyproject.toml docs group)
+        dir: "{{.BACKEND_DIR}}"
         cmds:
-            - uv pip install -r requirements.txt
+            - uv sync --group docs
+
+    setup:hooks:
+        desc: >
+            Install root-level Husky git hooks (pre-commit).
+            Run this once on the host — never inside Docker (no .git there).
+            Installs husky into node_modules and sets core.hooksPath via `prepare`.
+        cmds:
+            - pnpm install
+            - chmod +x .husky/pre-commit
 
     # =============================================================================
     # DEV — Docker Compose (recommended)

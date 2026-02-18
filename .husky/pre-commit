@@ -1,0 +1,88 @@
+#!/usr/bin/env sh
+# =============================================================================
+# Portfolio — pre-commit hook
+#
+# Runs quality checks only for the side(s) that have staged files:
+#
+#   frontend/**  →  lint-staged (prettier → eslint --fix)
+#                   tsc --noEmit  (only when .ts/.tsx files are staged)
+#
+#   backend/**   →  ruff format  (auto-formats staged Python files)
+#                   ruff check --fix  (auto-fixes lint issues)
+#
+# The hook exits non-zero on the first failure, blocking the commit.
+# Bypass with: git commit --no-verify  (use sparingly)
+# =============================================================================
+
+STAGED=$(git diff --cached --name-only --diff-filter=ACMR)
+
+# Nothing staged — nothing to do
+if [ -z "$STAGED" ]; then
+  exit 0
+fi
+
+HAS_FRONTEND=$(echo "$STAGED" | grep -E "^frontend/" | head -1)
+HAS_BACKEND=$(echo "$STAGED" | grep -E "^backend/.*\.py$" | head -1)
+HAS_FRONTEND_TS=$(echo "$STAGED" | grep -E "^frontend/src/.*\.(ts|tsx)$" | head -1)
+
+# =============================================================================
+# Frontend
+# =============================================================================
+if [ -n "$HAS_FRONTEND" ]; then
+  echo ""
+  echo "┌─ Frontend ──────────────────────────────────────────────────────────"
+
+  # lint-staged — prettier → eslint --fix (per staged file, config in frontend/package.json)
+  # Use a subshell cd so pnpm exec resolves binaries from frontend/node_modules/.bin
+  echo "│ ▸ lint-staged (prettier → eslint --fix)..."
+  (cd frontend && pnpm exec lint-staged --quiet) || {
+    echo "│ ✗ lint-staged failed"
+    exit 1
+  }
+  echo "│ ✓ lint-staged passed"
+
+  # TypeScript type check — only when .ts/.tsx files are staged
+  # (tsc operates on the whole project, not per-file)
+  if [ -n "$HAS_FRONTEND_TS" ]; then
+    echo "│ ▸ TypeScript type check..."
+    (cd frontend && pnpm exec tsc --noEmit) || {
+      echo "│ ✗ Type check failed — run 'task fix:frontend' to see full output"
+      exit 1
+    }
+    echo "│ ✓ TypeScript passed"
+  fi
+
+  echo "└─ Frontend ✓"
+fi
+
+# =============================================================================
+# Backend
+# =============================================================================
+if [ -n "$HAS_BACKEND" ]; then
+  echo ""
+  echo "┌─ Backend ───────────────────────────────────────────────────────────"
+
+  # ruff format — auto-formats staged Python files in-place
+  echo "│ ▸ ruff format..."
+  (cd backend && uv run ruff format .) || {
+    echo "│ ✗ ruff format failed"
+    exit 1
+  }
+  echo "│ ✓ ruff format passed"
+
+  # ruff check --fix — auto-fixes lint issues
+  echo "│ ▸ ruff check --fix..."
+  (cd backend && uv run ruff check --fix .) || {
+    echo "│ ✗ ruff check failed — run 'task fix:backend' to see full output"
+    exit 1
+  }
+  echo "│ ✓ ruff check passed"
+
+  # Re-stage any Python files that ruff modified
+  echo "$STAGED" | grep -E "^backend/.*\.py$" | xargs git add 2>/dev/null || true
+
+  echo "└─ Backend ✓"
+fi
+
+echo ""
+echo "✓ Pre-commit checks passed"

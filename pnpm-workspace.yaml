@@ -1,0 +1,17 @@
+# =============================================================================
+# pnpm Workspace Configuration
+#
+# The root `pnpm install` is intentionally minimal — it only installs husky
+# for root-level git hooks.  The frontend is a self-contained pnpm project
+# managed separately via `task setup:frontend` / `pnpm install` in frontend/.
+#
+# We do NOT declare `frontend` as a workspace package here because:
+#   - frontend manages its own lockfile and node_modules
+#   - hoisting frontend deps to the root would conflict with its isolated setup
+#   - task setup:frontend / Docker already handle frontend dep installation
+#
+# If you later add more JS/TS tooling at the root (e.g. shared eslint config,
+# changesets), add those packages here.
+# =============================================================================
+
+packages: []

@@ -21,8 +21,7 @@
     "test:run": "vitest run",
     "test:coverage": "vitest run --coverage",
     "generate:client": "openapi-ts",
-    "typedoc": "typedoc",
-    "prepare": "husky"
+    "typedoc": "typedoc"
   },
   "dependencies": {
     "@hey-api/client-fetch": "^0.13.1",
