@@ -1,0 +1,71 @@
+{
+  "$schema": "https://typedoc.org/schema.json",
+
+  "name": "Portfolio — Frontend Reference",
+
+  "entryPoints": [
+    "./src/lib/api-client.ts",
+    "./src/lib/constants.ts",
+    "./src/lib/errors.ts",
+    "./src/lib/query.ts",
+    "./src/lib/query-client.ts",
+    "./src/hooks/useProjects.ts",
+    "./src/types/index.ts",
+    "./src/components/ErrorBoundary.tsx"
+  ],
+  "entryPointStrategy": "expand",
+
+  "out": "./typedoc-out",
+
+  "plugin": ["typedoc-plugin-markdown"],
+
+  "readme": "none",
+
+  "githubPages": false,
+
+  "hideGenerator": true,
+
+  "excludePrivate": true,
+  "excludeProtected": false,
+  "excludeInternal": true,
+  "excludeExternals": true,
+  "excludeNotDocumented": false,
+
+  "categorizeByGroup": true,
+  "groupOrder": ["Functions", "Classes", "Types", "Interfaces", "Variables", "*"],
+
+  "sort": ["source-order"],
+
+  "includeVersion": false,
+
+  "tsconfig": "./tsconfig.json",
+
+  "logLevel": "Warn",
+
+  "treatWarningsAsErrors": false,
+  "treatValidationWarningsAsErrors": false,
+
+  "validation": {
+    "notExported": true,
+    "invalidLink": false,
+    "notDocumented": false
+  },
+
+  "commentStyle": "jsdoc",
+
+  "blockTags": [
+    "@param",
+    "@returns",
+    "@throws",
+    "@example",
+    "@deprecated",
+    "@since",
+    "@see",
+    "@internal",
+    "@alpha",
+    "@beta",
+    "@experimental"
+  ],
+  "inlineTags": ["@link", "@linkcode", "@linkplain"],
+  "modifierTags": ["@public", "@private", "@protected", "@internal", "@override"]
+}

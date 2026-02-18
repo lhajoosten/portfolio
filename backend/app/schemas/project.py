@@ -2,7 +2,7 @@ import re
 from datetime import datetime
 from uuid import UUID
 
-from pydantic import BaseModel, field_validator
+from pydantic import BaseModel, ValidationInfo, field_validator
 
 
 class ProjectBase(BaseModel):
@@ -24,16 +24,26 @@ class ProjectCreate(ProjectBase):
 
     @field_validator("slug", mode="before")
     @classmethod
-    def generate_slug(cls, v, info):
+    def generate_slug(cls, v: str | None, info: ValidationInfo) -> str:
         if v:
             return v
         title = info.data.get("title", "")
         return re.sub(r"[^a-z0-9-]", "-", title.lower()).strip("-")
 
 
-class ProjectUpdate(ProjectBase):
+class ProjectUpdate(BaseModel):
     title: str | None = None
+    slug: str | None = None
     description: str | None = None
+    content: str | None = None
+    tags: list[str] | None = None
+    tech_stack: list[str] | None = None
+    live_url: str | None = None
+    repo_url: str | None = None
+    image_url: str | None = None
+    featured: bool | None = None
+    published: bool | None = None
+    order: int | None = None
 
 
 class ProjectResponse(ProjectBase):

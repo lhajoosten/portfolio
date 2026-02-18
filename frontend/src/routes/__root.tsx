@@ -10,7 +10,7 @@ export const Route = createRootRouteWithContext<RouterContext>()({
   component: RootLayout,
 });
 
-function RootLayout(): JSX.Element {
+function RootLayout() {
   return (
     <div className="min-h-screen bg-zinc-950 text-zinc-100">
       <nav

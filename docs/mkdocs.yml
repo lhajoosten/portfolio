@@ -1,0 +1,260 @@
+site_name: Portfolio — Developer Docs
+site_description: >-
+  Technical documentation for the Luc Hajoosten portfolio — architecture,
+  API reference, and development guides.
+site_author: Luc Hajoosten
+site_url: https://lhajoosten.dev/docs/
+
+repo_name: lhajoosten/portfolio
+repo_url: https://github.com/lhajoosten/portfolio
+edit_uri: edit/main/docs/docs/
+
+copyright: Copyright &copy; Luc Hajoosten
+
+# ===========================================================================
+# Theme — Material
+# ===========================================================================
+theme:
+  name: material
+  language: en
+  palette:
+    # Dark mode (default — matches the portfolio's dark UI)
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+    # Light mode
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: teal
+      accent: teal
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+
+  font:
+    text: Inter
+    code: JetBrains Mono
+
+  features:
+    - navigation.instant
+    - navigation.instant.progress
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.tabs.sticky
+    - navigation.sections
+    - navigation.expand
+    - navigation.path
+    - navigation.indexes
+    - navigation.top
+    - toc.follow
+    - toc.integrate
+    - search.suggest
+    - search.highlight
+    - search.share
+    - content.code.copy
+    - content.code.annotate
+    - content.tabs.link
+    - content.tooltips
+    - header.autohide
+
+  icon:
+    repo: fontawesome/brands/github
+    logo: material/code-braces
+
+# ===========================================================================
+# Plugins
+# ===========================================================================
+plugins:
+  - search:
+      separator: '[\s\-,:!=\[\]()"`/]+|\.(?!\d)|&[lg]t;|(?!\b)(?=[A-Z][a-z])'
+
+  - mkdocstrings:
+      default_handler: python
+      handlers:
+        python:
+          # Point to the backend source root so module paths work
+          paths: ["../backend"]
+          options:
+            # Docstring style — must match what's used in the source
+            docstring_style: google
+            docstring_options:
+              ignore_init_summary: true
+
+            # What to show / hide
+            show_root_heading: true
+            show_root_full_path: false
+            show_source: true
+            show_symbol_type_heading: true
+            show_symbol_type_toc: true
+            show_if_no_docstring: false
+
+            # Members
+            members_order: source
+            inherited_members: false
+            filters: ["!^_"]   # hide private members by default
+
+            # Signatures
+            show_signature_annotations: true
+            separate_signature: true
+            signature_crossrefs: true
+
+            # Headings
+            heading_level: 2
+            show_category_heading: true
+
+  - gen-files:
+      scripts:
+        - scripts/gen_backend_ref.py
+        - scripts/gen_frontend_ref.py
+
+  - literate-nav:
+      nav_file: SUMMARY.md
+
+  - section-index
+
+# ===========================================================================
+# Markdown extensions
+# ===========================================================================
+markdown_extensions:
+  # Python-Markdown builtins
+  - abbr
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - md_in_html
+  - toc:
+      permalink: true
+      title: On this page
+
+  # PyMdown Extensions
+  - pymdownx.arithmatex:
+      generic: true
+  - pymdownx.betterem:
+      smart_enable: all
+  - pymdownx.caret
+  - pymdownx.details
+  - pymdownx.emoji:
+      emoji_index: !!python/name:material.extensions.emoji.twemoji
+      emoji_generator: !!python/name:material.extensions.emoji.to_svg
+  - pymdownx.highlight:
+      anchor_linenums: true
+      line_spans: __span
+      pygments_lang_class: true
+  - pymdownx.inlinehilite
+  - pymdownx.keys
+  - pymdownx.magiclink:
+      normalize_issue_symbols: true
+      repo_url_shorthand: true
+      user: lhajoosten
+      repo: portfolio
+  - pymdownx.mark
+  - pymdownx.smartsymbols
+  - pymdownx.snippets:
+      auto_append:
+        - includes/abbreviations.md
+  - pymdownx.superfences:
+      custom_fences:
+        - name: mermaid
+          class: mermaid
+          format: !!python/name:pymdownx.superfences.fence_code_format
+  - pymdownx.tabbed:
+      alternate_style: true
+      combine_header_slug: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+  - pymdownx.tilde
+
+# ===========================================================================
+# Navigation
+# Sections marked with literate-nav are auto-populated by gen-files scripts.
+# ===========================================================================
+nav:
+  - Home: index.md
+
+  - Getting Started:
+    - guides/index.md
+    - Quick Start: guides/quick-start.md
+    - Development Setup: guides/development-setup.md
+    - Environment Variables: guides/environment-variables.md
+
+  - Architecture:
+    - guides/architecture.md
+    - Backend: guides/backend-architecture.md
+    - Frontend: guides/frontend-architecture.md
+    - AI Pipeline: guides/ai-pipeline.md
+    - Auth & Security: guides/auth.md
+    - Database & Pooling: guides/database.md
+
+  - Backend API Reference:
+    - backend/index.md
+    - Core:
+      - backend/core/config.md
+      - backend/core/constants.md
+      - backend/core/exceptions.md
+      - backend/core/security.md
+      - backend/core/deps.md
+      - backend/core/middleware.md
+      - backend/core/error_handlers.md
+    - Database:
+      - backend/db/base.md
+      - backend/db/session.md
+    - Models:
+      - backend/models/project.md
+      - backend/models/user.md
+    - Schemas:
+      - backend/schemas/project.md
+      - backend/schemas/auth.md
+      - backend/schemas/ai.md
+    - Repositories:
+      - backend/repositories/project_repository.md
+      - backend/repositories/user_repository.md
+    - Services:
+      - backend/services/project_service.md
+      - backend/services/auth_service.md
+      - backend/services/ai/writing_service.md
+      - backend/services/ai/rag_service.md
+    - Routes:
+      - backend/routes/projects.md
+      - backend/routes/auth.md
+      - backend/routes/ai.md
+
+  - Frontend Reference:
+    - frontend/index.md
+    - Hooks:
+      - frontend/hooks/useProjects.md
+      - frontend/hooks/useAuth.md
+    - Components:
+      - frontend/components/ErrorBoundary.md
+      - frontend/components/ProtectedRoute.md
+    - Lib:
+      - frontend/lib/errors.md
+      - frontend/lib/query.md
+      - frontend/lib/constants.md
+      - frontend/lib/api-client.md
+
+# ===========================================================================
+# Extra
+# ===========================================================================
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/lhajoosten
+      name: GitHub
+    - icon: fontawesome/brands/linkedin
+      link: https://linkedin.com/in/lhajoosten
+      name: LinkedIn
+
+  # Announce the docs are auto-generated — useful for contributors
+  generator: false
+
+extra_css:
+  - stylesheets/extra.css
+
+extra_javascript:
+  - javascripts/mathjax.js
+  - https://unpkg.com/mathjax@3/es5/tex-mml-chtml.js

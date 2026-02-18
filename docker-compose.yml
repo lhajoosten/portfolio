@@ -1,7 +1,22 @@
+# ===========================================================================
+# Portfolio — Docker Compose
+#
+# Profiles:
+#   (default)  db + backend + frontend
+#   vllm       adds the vLLM OpenAI-compatible inference server
+#
+# Usage:
+#   task dev           → docker compose up --build  (foreground)
+#   task dev:d         → docker compose up --build -d  (background)
+#   task dev:watch     → docker compose watch  (live file sync)
+#   task vllm:up       → docker compose --profile vllm up vllm -d
+#   task dev:full      → docker compose --profile vllm up --build
+# ===========================================================================
+
 services:
-    # ===========================================================================
-    # DATABASE
-    # ===========================================================================
+    # =========================================================================
+    # DATABASE — PostgreSQL 16 + pgvector
+    # =========================================================================
     db:
         image: pgvector/pgvector:pg16
         container_name: portfolio_db
@@ -20,61 +35,214 @@ services:
             timeout: 5s
             retries: 10
 
-    # ===========================================================================
-    # BACKEND
-    # ===========================================================================
+    # =========================================================================
+    # BACKEND — FastAPI (Python 3.12 + uv)
+    #
+    # Single Dockerfile — dev CMD runs migrations + uvicorn --reload.
+    # Source is synced into the container via `develop: watch:` so that
+    # every save is reflected instantly without a full rebuild.
+    # The .venv named volume prevents the bind-mount from wiping installed deps.
+    # =========================================================================
     backend:
         build:
             context: ./backend
-            dockerfile: Dockerfile.dev
+            dockerfile: Dockerfile
         container_name: portfolio_backend
         restart: unless-stopped
         env_file:
-            - .env
+            - ./backend/.env
         environment:
             DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-portfolio}:${POSTGRES_PASSWORD:-portfolio}@db:5432/${POSTGRES_DB:-portfolio}
+            # Point at vLLM when the vllm profile is active; override in .env
+            # to use the real OpenAI API instead.
+            OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
         ports:
             - "8000:8000"
+        volumes:
+            # Named volume preserves the .venv so dep installs survive source syncs
+            - backend_venv:/app/.venv
         depends_on:
             db:
                 condition: service_healthy
         develop:
             watch:
+                # Sync application source on every save (fast — no rebuild)
                 - action: sync
-                  path: ./backend
-                  target: /app
+                  path: ./backend/app
+                  target: /app/app
                   ignore:
                       - __pycache__/
                       - "*.pyc"
-                      - .venv/
+                      - "*.pyo"
+                # Full rebuild when dependencies or config change
                 - action: rebuild
                   path: ./backend/pyproject.toml
+                - action: rebuild
+                  path: ./backend/uv.lock
 
-    # ===========================================================================
-    # FRONTEND
-    # ===========================================================================
+    # =========================================================================
+    # FRONTEND — React 19 + Vite (Node 22 + pnpm)
+    #
+    # Single Dockerfile — dev CMD starts pnpm dev --host.
+    # The node_modules named volume keeps the installed packages intact
+    # while individual source files are synced via `develop: watch:`.
+    # =========================================================================
     frontend:
         build:
             context: ./frontend
-            dockerfile: Dockerfile.dev
+            dockerfile: Dockerfile
         container_name: portfolio_frontend
         restart: unless-stopped
         env_file:
-            - .env
+            - ./frontend/.env
         ports:
             - "3000:3000"
         depends_on:
             - backend
         develop:
             watch:
+                # Sync source files on every save (instant HMR via Vite)
                 - action: sync
                   path: ./frontend/src
                   target: /app/src
                 - action: sync
                   path: ./frontend/index.html
                   target: /app/index.html
+                - action: sync
+                  path: ./frontend/public
+                  target: /app/public
+                # Rebuild when package config changes
                 - action: rebuild
                   path: ./frontend/package.json
+                - action: rebuild
+                  path: ./frontend/pnpm-lock.yaml
+                - action: sync+restart
+                  path: ./frontend/vite.config.ts
+                  target: /app/vite.config.ts
+                - action: sync+restart
+                  path: ./frontend/tailwind.config.ts
+                  target: /app/tailwind.config.ts
 
+    # =========================================================================
+    # vLLM — OpenAI-compatible OSS inference server  (profile: vllm)
+    #
+    # Target hardware: NVIDIA RTX 4080  (16 GB VRAM / Ada Lovelace)
+    #
+    # Model: Qwen2.5-14B-Instruct-AWQ  (recommended for RTX 4080 / 16 GB VRAM)
+    # ─────────────────────────────────────────────────────────────────────────
+    # VRAM budget (Qwen2.5 family):
+    #   7B  FP16          → ~14 GB  ✗  almost no KV cache headroom
+    #   7B  AWQ 4-bit     → ~4 GB   ✓  fast but weaker writing quality
+    #   14B AWQ 4-bit     → ~7.5 GB ✓  sweet spot — good quality, ~8.5 GB KV cache  ← used here
+    #   20B AWQ 4-bit     → ~10 GB  ✓  tight — only ~6 GB left for KV cache
+    #
+    # AWQ (Activation-aware Weight Quantization) is vLLM's preferred 4-bit
+    # format: minimal accuracy loss, first-class kernel support on Ada (RTX 40xx).
+    # VLLM_MODEL_HF_ID must point at an AWQ-quantized HuggingFace repo.
+    #
+    # Served model name (--served-model-name) is set to "qwen2.5-14b" so the
+    # backend always calls model="qwen2.5-14b" — the actual HF repo path
+    # never leaks into application code.
+    #
+    # Required root .env variables (Docker Compose substitution):
+    #   VLLM_MODEL_HF_ID=Qwen/Qwen2.5-14B-Instruct-AWQ  ← HF repo to download
+    #   VLLM_MODEL=qwen2.5-14b                           ← served name (default below)
+    #   HF_TOKEN=hf_...                                  ← only if model is gated
+    #
+    # Required backend/.env variables (application config):
+    #   VLLM_ENABLED=true
+    #   VLLM_MODEL=qwen2.5-14b
+    #
+    # Activate with:  task vllm:up   or   task dev:full
+    # =========================================================================
+    vllm:
+        image: vllm/vllm-openai:latest
+        container_name: portfolio_vllm
+        profiles: [vllm]
+        restart: unless-stopped
+        environment:
+            HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}
+        command:
+            # ── Model ──────────────────────────────────────────────────────
+            # HF repo path — must be an AWQ-quantized variant to fit in 16 GB VRAM
+            - "--model"
+            - "${VLLM_MODEL_HF_ID:-Qwen/Qwen2.5-14B-Instruct-AWQ}"
+
+            # Served name: what the OpenAI-compatible API advertises.
+            # The backend calls model="qwen2.5-14b" — keep this in sync with
+            # VLLM_MODEL / constants.VLLM_CHAT_MODEL.
+            - "--served-model-name"
+            - "${VLLM_MODEL:-qwen2.5-14b}"
+
+            # ── Quantization ───────────────────────────────────────────────
+            # AWQ 4-bit: ~7.5 GB weights for 14B, leaves ~8.5 GB for KV cache
+            - "--quantization"
+            - "awq"
+
+            # FP16 activations + AWQ 4-bit weights is the correct combo for Ada
+            - "--dtype"
+            - "float16"
+
+            # ── VRAM / KV cache ────────────────────────────────────────────
+            # Use 90 % of the 16 GB VRAM (~14.4 GB).  The remaining 10 % is
+            # reserved for CUDA context + framework overhead.
+            - "--gpu-memory-utilization"
+            - "${VLLM_GPU_MEM_UTIL:-0.90}"
+
+            # Max sequence length.  With AWQ 4-bit + 16 GB, 8192 is safe.
+            # Increase carefully — each extra token costs KV cache memory.
+            - "--max-model-len"
+            - "${VLLM_MAX_MODEL_LEN:-8192}"
+
+            # ── Runtime ────────────────────────────────────────────────────
+            - "--host"
+            - "0.0.0.0"
+            - "--port"
+            - "8000"
+
+            # Required by some community AWQ checkpoints that extend the
+            # base tokenizer / modelling code
+            - "--trust-remote-code"
+
+            # Disable usage stats sent to vLLM telemetry
+            - "--no-enable-prefix-caching"
+
+            # Flash Attention 2 — supported on Ada (RTX 40xx) + CUDA ≥ 12
+            - "--enable-chunked-prefill"
+        ports:
+            # Exposed on host as 8001 so it doesn't clash with FastAPI (8000)
+            - "8001:8000"
+        volumes:
+            # Cache downloaded model weights across container restarts.
+            # First pull of Qwen2.5-14B-Instruct-AWQ is ~7.5 GB — be patient.
+            - vllm_model_cache:/root/.cache/huggingface
+        # Shared memory — required by vLLM for tensor-parallel workers
+        ipc: host
+        deploy:
+            resources:
+                reservations:
+                    devices:
+                        - driver: nvidia
+                          count: 1 # single GPU — RTX 4080
+                          capabilities: [gpu]
+        healthcheck:
+            test:
+                ["CMD-SHELL", "curl -sf http://localhost:8000/health || exit 1"]
+            interval: 30s
+            timeout: 10s
+            retries: 5
+            # Allow up to 3 min for the model to load into VRAM on first start
+            start_period: 180s
+
+# =============================================================================
+# Named volumes
+# =============================================================================
 volumes:
+    # Postgres data directory — survives container restarts
     postgres_data:
+
+    # Python virtual environment — survives source bind-mounts on the backend
+    backend_venv:
+
+    # Downloaded Hugging Face model weights — survives vLLM container restarts
+    vllm_model_cache:

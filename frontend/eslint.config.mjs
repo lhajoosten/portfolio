@@ -18,6 +18,7 @@ export default tseslint.config(
       "**/openapi-ts.config.ts",
       ".husky/",
       "src/openapi/**/*",
+      "src/lib/api/**/*",
       "src/routeTree.gen.ts",
     ],
   },
@@ -69,6 +70,9 @@ export default tseslint.config(
     rules: {
       ...eslintPluginBetterTailwindcss.configs["recommended-warn"].rules,
       ...eslintPluginBetterTailwindcss.configs["recommended-error"].rules,
+      // Prettier (prettier-plugin-tailwindcss) owns class ordering — disabling
+      // the ESLint sort rule prevents the two tools fighting each other on save.
+      "better-tailwindcss/sort-classes": "off",
       "better-tailwindcss/enforce-consistent-line-wrapping": "off",
       "better-tailwindcss/no-unregistered-classes": [
         "warn",

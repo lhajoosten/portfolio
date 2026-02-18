@@ -3,16 +3,18 @@ version: "3"
 vars:
     FRONTEND_DIR: ./frontend
     BACKEND_DIR: ./backend
+    DOCS_DIR: ./docs
 
 tasks:
     # =============================================================================
     # SETUP
     # =============================================================================
     setup:
-        desc: Full project setup (install all deps)
+        desc: Full project setup — install all deps (frontend + backend + docs)
         cmds:
             - task: setup:frontend
             - task: setup:backend
+            - task: setup:docs
 
     setup:frontend:
         desc: Install frontend dependencies
@@ -21,180 +23,395 @@ tasks:
             - pnpm install
 
     setup:backend:
-        desc: Install backend dependencies
+        desc: Install backend dependencies (including dev group)
         dir: "{{.BACKEND_DIR}}"
         cmds:
-            - uv sync
+            - uv sync --all-groups
+
+    setup:docs:
+        desc: Install MkDocs documentation dependencies
+        dir: "{{.DOCS_DIR}}"
+        cmds:
+            - uv pip install -r requirements.txt
 
     # =============================================================================
-    # DEV — Docker (single command, everything runs with watch)
+    # DEV — Docker Compose (recommended)
     # =============================================================================
     dev:
-        desc: Start full dev environment via Docker with live reload (recommended)
+        desc: >
+            Build images and start the full dev stack (db + backend + frontend).
+            Logs stream to the terminal. Use Ctrl-C to stop.
+        cmds:
+            - docker compose up --build
+
+    dev:d:
+        desc: >
+            Start the full dev stack in the background (detached).
+            Use `task logs` to follow output, `task dev:down` to stop.
+        cmds:
+            - docker compose up --build -d
+
+    dev:watch:
+        desc: >
+            Start the full dev stack with Docker Compose Watch.
+            Source files are synced into containers on save; lockfile changes
+            trigger a rebuild automatically. Recommended for active development.
         cmds:
             - docker compose watch
 
     dev:down:
-        desc: Stop all Docker dev services
+        desc: Stop and remove all dev containers (keeps volumes)
         cmds:
             - docker compose down
 
+    dev:down:v:
+        desc: Stop and remove all dev containers AND volumes (full wipe)
+        cmds:
+            - docker compose down -v
+
     # =============================================================================
-    # DEV — Local (without Docker, requires local db)
+    # DEV — Local (no Docker, requires a local or db:up Postgres)
     # =============================================================================
+    dev:backend:
+        desc: Start the backend dev server locally (requires local Postgres or `task db:up`)
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+
     dev:frontend:
-        desc: Start frontend dev server locally
+        desc: Start the frontend Vite dev server locally
         dir: "{{.FRONTEND_DIR}}"
         cmds:
             - pnpm dev
 
-    dev:backend:
-        desc: Start backend dev server locally
-        dir: "{{.BACKEND_DIR}}"
+    # =============================================================================
+    # vLLM — OSS model served via vllm/vllm-openai (GPU recommended)
+    # =============================================================================
+    vllm:up:
+        desc: >
+            Start the vLLM container (profile: vllm).
+            Default model: Qwen/Qwen2.5-14B-Instruct-AWQ (~7.5 GB, sweet spot for RTX 4080 / 16 GB VRAM).
+            Override by setting VLLM_MODEL_HF_ID and VLLM_MODEL in the root .env.
+            Requires NVIDIA GPU + nvidia-container-toolkit.
         cmds:
-            - uv run uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
+            - docker compose --profile vllm up vllm -d
+
+    vllm:down:
+        desc: Stop the vLLM container
+        cmds:
+            - docker compose --profile vllm stop vllm
+
+    vllm:logs:
+        desc: Follow vLLM container logs
+        cmds:
+            - docker compose --profile vllm logs -f vllm
+
+    # Start everything including vLLM in one command
+    dev:full:
+        desc: Start the full dev stack including the vLLM container
+        cmds:
+            - docker compose --profile vllm up --build
 
     # =============================================================================
     # DATABASE
     # =============================================================================
     db:up:
-        desc: Start Postgres with pgvector only
+        desc: Start Postgres + pgvector only (detached)
         cmds:
             - docker compose up db -d
 
     db:down:
-        desc: Stop database
+        desc: Stop the database container
         cmds:
-            - docker compose down
+            - docker compose stop db
 
     db:reset:
-        desc: Wipe and restart database
+        desc: Wipe the database volume and restart Postgres
         cmds:
             - docker compose down -v
             - docker compose up db -d
 
     db:migrate:
-        desc: Run all pending migrations
+        desc: Run all pending Alembic migrations
         dir: "{{.BACKEND_DIR}}"
         cmds:
             - uv run alembic upgrade head
 
     db:migration:
-        desc: Create a new migration — usage task db:migration -- "your message"
+        desc: 'Create a new Alembic migration — usage: task db:migration -- "your message"'
         dir: "{{.BACKEND_DIR}}"
         cmds:
             - uv run alembic revision --autogenerate -m "{{.CLI_ARGS}}"
 
     db:rollback:
-        desc: Rollback last migration
+        desc: Roll back the last Alembic migration
         dir: "{{.BACKEND_DIR}}"
         cmds:
             - uv run alembic downgrade -1
 
     db:history:
-        desc: Show migration history
+        desc: Show Alembic migration history
         dir: "{{.BACKEND_DIR}}"
         cmds:
             - uv run alembic history --verbose
 
     db:shell:
-        desc: Open psql shell
+        desc: Open a psql shell inside the running Postgres container
         cmds:
             - docker exec -it portfolio_db psql -U portfolio -d portfolio
 
     # =============================================================================
+    # TESTS
+    # =============================================================================
+    test:
+        desc: Run all tests — backend (unit + integration) and frontend
+        cmds:
+            - task: test:backend
+            - task: test:frontend
+
+    test:backend:
+        desc: Run all backend tests (unit + integration)
+        cmds:
+            - task: test:unit
+            - task: test:integration
+
+    test:unit:
+        desc: >
+            Run backend unit tests only (no Docker required).
+            Excludes tests marked with @pytest.mark.integration.
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run pytest -m "not integration" tests/ -v --tb=short
+
+    test:integration:
+        desc: >
+            Run backend integration tests (requires Docker — spins up a real
+            Postgres container via testcontainers).
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run pytest -m integration tests/integration/ -v --tb=short
+
+    test:integration:verbose:
+        desc: Run backend integration tests with full output and no capture
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run pytest -m integration tests/integration/ -v -s --tb=long
+
+    test:frontend:
+        desc: Run frontend unit tests (Vitest)
+        dir: "{{.FRONTEND_DIR}}"
+        cmds:
+            - pnpm test:run
+
+    test:coverage:
+        desc: Run backend tests with coverage report
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run pytest tests/ --cov=app --cov-report=term-missing --cov-report=html
+
+    test:coverage:frontend:
+        desc: Run frontend tests with coverage report
+        dir: "{{.FRONTEND_DIR}}"
+        cmds:
+            - pnpm test:coverage
+
+    # =============================================================================
     # CODE QUALITY
     # =============================================================================
+
+    # -----------------------------------------------------------------------------
+    # fix — the "make it right" task
+    #
+    # Runs in the correct order so tools don't fight each other:
+    #   1. Prettier  — establishes canonical formatting (incl. Tailwind class order)
+    #   2. ESLint    — auto-fixes remaining lint issues (class order already settled)
+    #   3. tsc       — type-checks without emitting; reports any remaining errors
+    #
+    # Backend equivalent: ruff format then ruff check --fix (same principle).
+    # -----------------------------------------------------------------------------
+    fix:
+        desc: >
+            Format → lint-fix → typecheck for the whole monorepo.
+            Run this before committing to ensure everything is clean.
+        cmds:
+            - task: fix:frontend
+            - task: fix:backend
+
+    fix:frontend:
+        desc: "Frontend: prettier → eslint --fix → tsc --noEmit"
+        dir: "{{.FRONTEND_DIR}}"
+        cmds:
+            - pnpm format # prettier --write . (includes Tailwind class sort)
+            - pnpm lint:fix # eslint . --fix     (auto-fixable lint issues)
+            - pnpm typecheck # tsc --noEmit       (type errors — read only)
+
+    fix:backend:
+        desc: "Backend: ruff format → ruff check --fix"
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run ruff format .
+            - uv run ruff check --fix .
+
     lint:
-        desc: Lint everything
+        desc: Lint everything (frontend + backend)
         cmds:
             - task: lint:frontend
             - task: lint:backend
 
     lint:frontend:
-        desc: Lint frontend
+        desc: Lint frontend with ESLint (zero warnings allowed)
         dir: "{{.FRONTEND_DIR}}"
         cmds:
             - pnpm lint
 
     lint:backend:
-        desc: Lint backend with ruff
+        desc: Lint and format-check backend with Ruff
         dir: "{{.BACKEND_DIR}}"
         cmds:
             - uv run ruff check .
             - uv run ruff format --check .
 
     format:
-        desc: Format everything
+        desc: Auto-format everything (frontend + backend)
         cmds:
             - task: format:frontend
             - task: format:backend
 
     format:frontend:
-        desc: Format frontend
+        desc: Format frontend with Prettier
         dir: "{{.FRONTEND_DIR}}"
         cmds:
             - pnpm format
 
     format:backend:
-        desc: Format backend with ruff
+        desc: Format and auto-fix backend with Ruff
         dir: "{{.BACKEND_DIR}}"
         cmds:
             - uv run ruff format .
             - uv run ruff check --fix .
 
     typecheck:
-        desc: Typecheck everything
+        desc: Type-check everything (frontend + backend)
         cmds:
             - task: typecheck:frontend
             - task: typecheck:backend
 
     typecheck:frontend:
+        desc: Type-check frontend with tsc --noEmit
         dir: "{{.FRONTEND_DIR}}"
         cmds:
             - pnpm typecheck
 
     typecheck:backend:
+        desc: Type-check backend with mypy (strict mode)
         dir: "{{.BACKEND_DIR}}"
         cmds:
             - uv run mypy app/
+
+    # Run all quality checks in one shot (read-only — no auto-fixes)
+    check:
+        desc: >
+            Lint + typecheck + test for the whole monorepo (read-only, no fixes).
+            Use `task fix` first if you want auto-fixes applied before checking.
+        cmds:
+            - task: lint
+            - task: typecheck
+            - task: test
 
     # =============================================================================
     # GENERATE
     # =============================================================================
     generate:client:
-        desc: Generate frontend API client from OpenAPI spec (Hey API)
+        desc: >
+            Generate the typed frontend API client from the running backend's
+            OpenAPI schema (Hey API). Backend must be running on port 8000.
         cmds:
             - cd {{.FRONTEND_DIR}} && pnpm generate:client
+
+    generate:client:docker:
+        desc: >
+            Generate the API client using the Dockerised backend.
+            Starts db + backend if not running, generates, then leaves them up.
+        cmds:
+            - docker compose up db backend -d --wait
+            - cd {{.FRONTEND_DIR}} && pnpm generate:client
+
+    # =============================================================================
+    # DOCUMENTATION
+    # =============================================================================
+    docs:build:
+        desc: >
+            Build the MkDocs documentation site to docs/site/.
+            Runs TypeDoc first to generate frontend Markdown, then MkDocs.
+        cmds:
+            - task: docs:typedoc
+            - cd {{.DOCS_DIR}} && mkdocs build --strict
+
+    docs:serve:
+        desc: >
+            Serve the MkDocs documentation locally with live reload.
+            Runs TypeDoc first, then starts the MkDocs dev server on port 8001.
+        cmds:
+            - task: docs:typedoc
+            - cd {{.DOCS_DIR}} && mkdocs serve --dev-addr localhost:8001
+
+    docs:typedoc:
+        desc: Generate TypeScript API reference Markdown via TypeDoc
+        dir: "{{.FRONTEND_DIR}}"
+        cmds:
+            - pnpm typedoc
+
+    docs:deploy:
+        desc: Deploy docs to GitHub Pages via mkdocs gh-deploy
+        dir: "{{.DOCS_DIR}}"
+        cmds:
+            - mkdocs gh-deploy --force
+
+    # =============================================================================
+    # LOGS
+    # =============================================================================
+    logs:
+        desc: Follow Docker Compose logs for all running services
+        cmds:
+            - docker compose logs -f
+
+    logs:backend:
+        desc: Follow backend container logs
+        cmds:
+            - docker compose logs -f backend
+
+    logs:frontend:
+        desc: Follow frontend container logs
+        cmds:
+            - docker compose logs -f frontend
+
+    logs:db:
+        desc: Follow database container logs
+        cmds:
+            - docker compose logs -f db
 
     # =============================================================================
     # UTILS
     # =============================================================================
     clean:
-        desc: Clean build artifacts
+        desc: Remove build artifacts (dist, .tanstack, __pycache__, *.pyc)
         cmds:
             - rm -rf {{.FRONTEND_DIR}}/dist
             - rm -rf {{.FRONTEND_DIR}}/.tanstack
+            - rm -rf {{.FRONTEND_DIR}}/typedoc-out
+            - rm -rf {{.DOCS_DIR}}/site
             - find {{.BACKEND_DIR}} -type d -name __pycache__ -exec rm -rf {} +
             - find {{.BACKEND_DIR}} -name "*.pyc" -delete
+            - find {{.BACKEND_DIR}} -name ".mypy_cache" -exec rm -rf {} +
+            - find {{.BACKEND_DIR}} -name ".ruff_cache" -exec rm -rf {} +
 
-    logs:
-        desc: Follow Docker logs for all services
+    ps:
+        desc: Show the status of all Compose services
         cmds:
-            - docker compose logs -f
-
-    logs:backend:
-        desc: Follow backend logs
-        cmds:
-            - docker compose logs -f backend
-
-    logs:frontend:
-        desc: Follow frontend logs
-        cmds:
-            - docker compose logs -f frontend
+            - docker compose ps
 
     commit:
-        desc: Commit changes to Git (needs -m <message>)
+        desc: 'Stage all, commit, and push — usage: task commit m="your message"'
         cmds:
             - git add .
             - git commit -m '{{.m}}' --no-verify
