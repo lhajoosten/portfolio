@@ -1,0 +1,134 @@
+/* ==========================================================================
+   Portfolio Docs — Extra CSS
+   Minor theme overrides layered on top of Material for MkDocs.
+   ========================================================================== */
+
+/* --------------------------------------------------------------------------
+   Typography
+   -------------------------------------------------------------------------- */
+
+/* Slightly tighten heading spacing so long reference pages feel less stretched */
+.md-typeset h1 {
+  margin-bottom: 0.6em;
+}
+
+.md-typeset h2 {
+  margin-top: 1.4em;
+  margin-bottom: 0.5em;
+}
+
+.md-typeset h3 {
+  margin-top: 1.2em;
+  margin-bottom: 0.4em;
+}
+
+/* Inline code — subtle background that works in both light and dark modes */
+.md-typeset code:not(.highlight code) {
+  border-radius: 4px;
+  padding: 0.1em 0.35em;
+  font-size: 0.875em;
+}
+
+/* --------------------------------------------------------------------------
+   Navigation
+   -------------------------------------------------------------------------- */
+
+/* Make the active nav item stand out a touch more */
+.md-nav__item--active > .md-nav__link {
+  font-weight: 600;
+}
+
+/* --------------------------------------------------------------------------
+   Content grid cards (used on the home page)
+   -------------------------------------------------------------------------- */
+
+.md-typeset .grid.cards > ul > li {
+  border-radius: 8px;
+  transition: box-shadow 0.2s ease, transform 0.2s ease;
+}
+
+.md-typeset .grid.cards > ul > li:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+/* --------------------------------------------------------------------------
+   Tables
+   -------------------------------------------------------------------------- */
+
+/* Compact table rows so wide reference tables don't require as much scrolling */
+.md-typeset table:not([class]) th,
+.md-typeset table:not([class]) td {
+  padding: 0.5em 0.8em;
+}
+
+/* Zebra-stripe table rows in light mode */
+[data-md-color-scheme="default"] .md-typeset table:not([class]) tr:nth-child(even) {
+  background-color: rgba(0, 0, 0, 0.03);
+}
+
+/* Zebra-stripe table rows in dark mode */
+[data-md-color-scheme="slate"] .md-typeset table:not([class]) tr:nth-child(even) {
+  background-color: rgba(255, 255, 255, 0.04);
+}
+
+/* --------------------------------------------------------------------------
+   Code blocks
+   -------------------------------------------------------------------------- */
+
+/* Slightly rounded code blocks to match the card style */
+.md-typeset pre > code {
+  border-radius: 6px;
+}
+
+/* Ensure long inline SQL / shell strings wrap rather than overflow */
+.md-typeset pre {
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* --------------------------------------------------------------------------
+   Admonitions
+   -------------------------------------------------------------------------- */
+
+/* Round admonition borders to match the overall design language */
+.md-typeset .admonition,
+.md-typeset details {
+  border-radius: 6px;
+}
+
+/* --------------------------------------------------------------------------
+   API reference pages (mkdocstrings output)
+   -------------------------------------------------------------------------- */
+
+/* Visually separate each documented symbol with a subtle rule */
+.doc-object + .doc-object {
+  margin-top: 2em;
+  padding-top: 1.5em;
+  border-top: 1px solid var(--md-default-fg-color--lightest);
+}
+
+/* Make the signature stand out without being too loud */
+.doc-signature {
+  background: var(--md-code-bg-color);
+  border-radius: 4px;
+  padding: 0.4em 0.6em;
+  font-size: 0.9em;
+}
+
+/* --------------------------------------------------------------------------
+   Mermaid diagrams — centre-align for narrow viewports
+   -------------------------------------------------------------------------- */
+
+.md-typeset .mermaid {
+  text-align: center;
+}
+
+/* --------------------------------------------------------------------------
+   Footer
+   -------------------------------------------------------------------------- */
+
+/* Subtle copyright text colour */
+.md-footer-meta__inner {
+  opacity: 0.75;
+}

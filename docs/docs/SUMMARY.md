@@ -1,0 +1,15 @@
+* [Home](index.md)
+* Getting Started
+    * [Getting Started](guides/index.md)
+    * [Quick Start](guides/quick-start.md)
+    * [Development Setup](guides/development-setup.md)
+    * [Environment Variables](guides/environment-variables.md)
+* Architecture
+    * [Overview](guides/architecture.md)
+    * [Backend](guides/backend-architecture.md)
+    * [Frontend](guides/frontend-architecture.md)
+    * [AI Pipeline](guides/ai-pipeline.md)
+    * [Auth & Security](guides/auth.md)
+    * [Database & Pooling](guides/database.md)
+* [Backend API Reference](backend/)
+* [Frontend Reference](frontend/)

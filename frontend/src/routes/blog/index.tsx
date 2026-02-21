@@ -1,101 +1,74 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { ErrorState, LoadingState, PageContainer, PageHeader, TagPill } from "@/components/ui";
 import { usePosts } from "@/hooks/usePosts";
+import { getPostsApiV1PostsGetOptions } from "@/lib/api/@tanstack/react-query.gen";
 import type { PostResponse } from "@/lib/api/types.gen";
 
+// ---------------------------------------------------------------------------
+// Route — with prefetch loader
+// ---------------------------------------------------------------------------
+
 export const Route = createFileRoute("/blog/")({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.prefetchQuery(getPostsApiV1PostsGetOptions({ query: { published_only: true } })),
   component: BlogPage,
 });
+
+// ---------------------------------------------------------------------------
+// Emoji map for post thumbnails
+// ---------------------------------------------------------------------------
+
+const THUMB_EMOJIS: Record<string, string> = {
+  ai: "🤖",
+  llm: "🧠",
+  rag: "🔍",
+  fastapi: "⚡",
+  python: "🐍",
+  react: "⚛️",
+  agents: "🤖",
+};
+
+function getPostEmoji(tags: string[]): string {
+  const firstTag = tags[0]?.toLowerCase() ?? "";
+  return THUMB_EMOJIS[firstTag] ?? "✍️";
+}
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 function BlogPage() {
   const { data: posts = [], isLoading, error } = usePosts();
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 48px",
-        }}
-      >
-        <p style={{ color: "var(--muted)" }}>Loading posts…</p>
-      </div>
+      <PageContainer style={{ paddingBottom: "64px" }}>
+        <LoadingState message="Loading posts…" />
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 48px",
-        }}
-      >
-        <p style={{ color: "var(--danger)" }}>Failed to load posts.</p>
-      </div>
+      <PageContainer style={{ paddingBottom: "64px" }}>
+        <ErrorState message="Failed to load posts." />
+      </PageContainer>
     );
   }
 
-  const [featured, rest] = (() => {
-    const f = posts[0];
-    const r = posts.slice(1);
-    return [f, r] as [PostResponse | undefined, PostResponse[]];
-  })();
+  const [featured, rest] =
+    posts.length > 0
+      ? [posts[0] as PostResponse, posts.slice(1)]
+      : [undefined, [] as PostResponse[]];
 
   return (
-    <div
-      style={{
-        maxWidth: "1280px",
-        margin: "0 auto",
-        padding: "64px 48px 120px",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          marginBottom: "56px",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "11px",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "var(--accent)",
-              marginBottom: "12px",
-            }}
-          >
-            Writing
-          </div>
-          <h1
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "52px",
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-            }}
-          >
-            The Blog
-          </h1>
-        </div>
-        <p
-          style={{
-            maxWidth: "320px",
-            color: "var(--muted)",
-            fontSize: "15px",
-            lineHeight: 1.7,
-          }}
-        >
-          Thoughts on AI / LLM engineering, production patterns, and building things that matter.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader
+        eyebrow="Writing"
+        title="The Blog"
+        description="Thoughts on AI / LLM engineering, production patterns, and building things that matter."
+      />
 
       {/* Empty state */}
       {posts.length === 0 && (
@@ -119,21 +92,18 @@ function BlogPage() {
             gap: "24px",
           }}
         >
-          {/* Featured card — spans full width */}
           {featured && <FeaturedCard post={featured} />}
-
-          {/* Regular cards */}
           {rest.map((post) => (
             <RegularCard key={post.id} post={post} />
           ))}
         </div>
       )}
-    </div>
+    </PageContainer>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Featured Card
+// Featured Card (spans 2 columns)
 // ---------------------------------------------------------------------------
 
 function FeaturedCard({ post }: { post: PostResponse }) {
@@ -144,22 +114,12 @@ function FeaturedCard({ post }: { post: PostResponse }) {
       style={{ textDecoration: "none", gridColumn: "span 2" }}
     >
       <div
+        className="card"
         style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--r-lg)",
           overflow: "hidden",
           display: "grid",
           gridTemplateColumns: "1fr 320px",
-          cursor: "pointer",
-          transition: "border-color 0.2s",
         }}
-        onMouseEnter={(e) =>
-          ((e.currentTarget as HTMLDivElement).style.borderColor = "var(--border2)")
-        }
-        onMouseLeave={(e) =>
-          ((e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)")
-        }
       >
         {/* Thumb */}
         <div
@@ -195,39 +155,32 @@ function FeaturedCard({ post }: { post: PostResponse }) {
           }}
         >
           <div>
+            {/* Tags + read time */}
             <div
               style={{
                 display: "flex",
                 alignItems: "center",
                 gap: "12px",
-                fontFamily: "var(--font-mono)",
-                fontSize: "11px",
-                color: "var(--muted)",
                 marginBottom: "16px",
               }}
             >
               {(post.tags ?? []).slice(0, 1).map((tag) => (
-                <span
-                  key={tag}
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "10px",
-                    padding: "3px 8px",
-                    borderRadius: "3px",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    background: "rgba(200,255,71,0.1)",
-                    color: "var(--accent)",
-                  }}
-                >
-                  {tag}
-                </span>
+                <TagPill key={tag} label={tag} variant="lime" />
               ))}
               {post.reading_time_minutes != null && (
-                <span>{post.reading_time_minutes} min read</span>
+                <span
+                  style={{
+                    fontFamily: "var(--font-mono)",
+                    fontSize: "11px",
+                    color: "var(--muted)",
+                  }}
+                >
+                  {post.reading_time_minutes} min read
+                </span>
               )}
             </div>
 
+            {/* Title */}
             <h2
               style={{
                 fontFamily: "var(--font-display)",
@@ -241,6 +194,7 @@ function FeaturedCard({ post }: { post: PostResponse }) {
               {post.title}
             </h2>
 
+            {/* Excerpt */}
             <p
               style={{
                 fontSize: "14px",
@@ -261,43 +215,22 @@ function FeaturedCard({ post }: { post: PostResponse }) {
 }
 
 // ---------------------------------------------------------------------------
-// Regular Card
+// Regular Card (1 column)
 // ---------------------------------------------------------------------------
 
 function RegularCard({ post }: { post: PostResponse }) {
-  const thumbEmojis: Record<string, string> = {
-    ai: "🤖",
-    llm: "🧠",
-    rag: "🔍",
-    fastapi: "⚡",
-    python: "🐍",
-    react: "⚛️",
-    agents: "🤖",
-  };
-
-  const firstTag = (post.tags ?? [])[0]?.toLowerCase() ?? "";
-  const emoji = thumbEmojis[firstTag] ?? "✍️";
+  const emoji = getPostEmoji(post.tags ?? []);
 
   return (
     <Link to="/blog/$slug" params={{ slug: post.slug }} style={{ textDecoration: "none" }}>
       <div
+        className="card"
         style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--r-lg)",
           overflow: "hidden",
-          cursor: "pointer",
-          transition: "border-color 0.2s",
           height: "100%",
           display: "flex",
           flexDirection: "column",
         }}
-        onMouseEnter={(e) =>
-          ((e.currentTarget as HTMLDivElement).style.borderColor = "var(--border2)")
-        }
-        onMouseLeave={(e) =>
-          ((e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)")
-        }
       >
         {/* Thumb */}
         <div
@@ -332,37 +265,32 @@ function RegularCard({ post }: { post: PostResponse }) {
             flex: 1,
           }}
         >
+          {/* Tags + read time */}
           <div
             style={{
               display: "flex",
               alignItems: "center",
               gap: "12px",
-              fontFamily: "var(--font-mono)",
-              fontSize: "11px",
-              color: "var(--muted)",
               marginBottom: "12px",
             }}
           >
             {(post.tags ?? []).slice(0, 1).map((tag) => (
+              <TagPill key={tag} label={tag} variant="blue" />
+            ))}
+            {post.reading_time_minutes != null && (
               <span
-                key={tag}
                 style={{
                   fontFamily: "var(--font-mono)",
-                  fontSize: "10px",
-                  padding: "3px 8px",
-                  borderRadius: "3px",
-                  letterSpacing: "0.06em",
-                  textTransform: "uppercase",
-                  background: "rgba(61,90,254,0.15)",
-                  color: "#818cf8",
+                  fontSize: "11px",
+                  color: "var(--muted)",
                 }}
               >
-                {tag}
+                {post.reading_time_minutes} min read
               </span>
-            ))}
-            {post.reading_time_minutes != null && <span>{post.reading_time_minutes} min read</span>}
+            )}
           </div>
 
+          {/* Title */}
           <h2
             style={{
               fontFamily: "var(--font-display)",
@@ -376,6 +304,7 @@ function RegularCard({ post }: { post: PostResponse }) {
             {post.title}
           </h2>
 
+          {/* Excerpt */}
           <p
             style={{
               fontSize: "14px",
@@ -396,12 +325,13 @@ function RegularCard({ post }: { post: PostResponse }) {
 }
 
 // ---------------------------------------------------------------------------
-// Shared
+// PostAuthor — shared between featured and regular cards
 // ---------------------------------------------------------------------------
 
 function PostAuthor({ post }: { post: PostResponse }) {
   return (
     <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+      {/* Avatar */}
       <div
         style={{
           width: "24px",
@@ -420,6 +350,8 @@ function PostAuthor({ post }: { post: PostResponse }) {
       >
         L
       </div>
+
+      {/* Name + date */}
       <div>
         <div style={{ fontSize: "13px", fontWeight: 600, color: "var(--text)" }}>Luc</div>
         <div

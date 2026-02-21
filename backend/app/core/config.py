@@ -4,39 +4,48 @@ All configuration is read from the environment (or a ``.env`` file in the
 working directory) via ``pydantic-settings``.  Every field has a sensible
 development default so the application starts without any ``.env`` file.
 
-vLLM vs OpenAI
---------------
-The backend is designed to work with **either** the real OpenAI API **or** a
-self-hosted vLLM container that exposes an OpenAI-compatible endpoint.
-Toggle between them with ``VLLM_ENABLED``:
+AI providers
+------------
+The portfolio uses two fully-local, free AI services — both exposed via
+OpenAI-compatible HTTP APIs so the ``openai`` Python SDK works unchanged:
 
-- ``VLLM_ENABLED=false`` (default) — uses ``OPENAI_BASE_URL`` + ``OPENAI_MODEL``
-- ``VLLM_ENABLED=true`` — uses ``VLLM_BASE_URL`` + ``VLLM_MODEL`` (served name)
+``vllm-chat``
+    vLLM serving ``Qwen/Qwen2.5-7B-Instruct-AWQ`` for the writing assistant.
+    Activated with the ``vllm`` Docker Compose profile.
+    Endpoint: ``http://vllm-chat:8000/v1``
 
-Recommended model for RTX 4080 (16 GB VRAM): **Qwen/Qwen2.5-14B-Instruct-AWQ**
-(~7.5 GB weights, ~8.5 GB left for KV cache).  Set these in ``backend/.env``::
+``infinity``
+    infinity-emb serving ``BAAI/bge-base-en-v1.5`` for RAG embeddings.
+    Activated with the ``vllm`` Docker Compose profile.
+    Endpoint: ``http://infinity:7997/v1``
 
-    # root .env  (Docker Compose variable substitution)
-    VLLM_MODEL_HF_ID=Qwen/Qwen2.5-14B-Instruct-AWQ
-    VLLM_MODEL=qwen2.5-14b
-
-    # backend/.env  (pydantic-settings)
-    VLLM_ENABLED=true
-    VLLM_MODEL=qwen2.5-14b
-    VLLM_BASE_URL=http://vllm:8000/v1
+Both containers cache downloaded model weights in named Docker volumes so
+the first-run download only happens once.
 
 Example ``backend/.env``::
 
-    VLLM_ENABLED=true
-    VLLM_MODEL_HF_ID=Qwen/Qwen2.5-14B-Instruct-AWQ
-    VLLM_MODEL=qwen2.5-14b
-    OPENAI_API_KEY=local-dev-key
+    # Database
+    DATABASE_URL=postgresql+asyncpg://portfolio:portfolio@db:5432/portfolio
+
+    # Auth
     JWT_SECRET=change-me-in-production
+
+    # AI — vLLM chat container
+    VLLM_CHAT_BASE_URL=http://vllm-chat:8000/v1
+    VLLM_CHAT_MODEL=qwen2.5-7b
+
+    # AI — infinity-emb container
+    VLLM_EMBED_BASE_URL=http://infinity:7997/v1
+    VLLM_EMBED_MODEL=BAAI/bge-base-en-v1.5
 """
 
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
-from app.core.constants import ACCESS_TOKEN_EXPIRE_MINUTES, OPENAI_CHAT_MODEL, VLLM_CHAT_MODEL
+from app.core.constants import (
+    ACCESS_TOKEN_EXPIRE_MINUTES,
+    VLLM_CHAT_MODEL,
+    VLLM_EMBED_MODEL,
+)
 
 
 class Settings(BaseSettings):
@@ -63,21 +72,23 @@ class Settings(BaseSettings):
         JWT_EXPIRE_MINUTES: Token lifetime in minutes.
         FIRST_SUPERUSER_EMAIL: Email address for the initial superuser account.
         FIRST_SUPERUSER_PASSWORD: Password for the initial superuser account.
-        OPENAI_API_KEY: API key for OpenAI **or** the vLLM container (vLLM
-            accepts any non-empty string when ``--api-key`` is not set).
-        OPENAI_BASE_URL: Base URL for the OpenAI-compatible API.  Set to
-            ``http://vllm:8000/v1`` when using the vLLM container.
-        OPENAI_MODEL: Chat model name used when ``VLLM_ENABLED=false``.
-        VLLM_ENABLED: Switch to the vLLM container as the AI provider.
-        VLLM_MODEL_HF_ID: HuggingFace repository path that the vLLM container
-            downloads and serves (e.g. ``"Qwen/Qwen2.5-14B-Instruct-AWQ"``).  This
-            is passed as ``--model`` to the vLLM process.
-        VLLM_MODEL: The **served model name** advertised by the vLLM
-            OpenAI-compatible API (``--served-model-name``).  The backend uses
-            this as the ``model`` parameter in every completion call so the
-            actual HF repo path never leaks into application code.
-        VLLM_BASE_URL: Base URL of the vLLM container's OpenAI-compatible
-            endpoint (default ``"http://vllm:8000/v1"``).
+        LLM_API_KEY: Dummy API key sent to both vLLM and infinity-emb.
+            Neither service validates the key value — any non-empty string
+            works.  Kept as a single field so the ``openai`` SDK does not
+            complain about a missing ``api_key``.
+        VLLM_CHAT_BASE_URL: Base URL of the vLLM chat container's
+            OpenAI-compatible endpoint.  Default resolves to the Docker
+            Compose service name ``vllm-chat``.
+        VLLM_CHAT_MODEL: Served model name advertised by the vLLM chat API
+            (``--served-model-name``).  Must match the value passed to the
+            vLLM process.  Defaults to ``"qwen2.5-7b"``.
+        VLLM_EMBED_BASE_URL: Base URL of the infinity-emb container's
+            OpenAI-compatible endpoint.  Default resolves to the Docker
+            Compose service name ``infinity``.
+        VLLM_EMBED_MODEL: Model name served by infinity-emb.  For
+            ``BAAI/bge-base-en-v1.5`` this is the HuggingFace repo path
+            itself, which infinity-emb uses directly as the API model
+            identifier.
         CORS_ORIGINS: Allowed origins for the CORS middleware.
     """
 
@@ -107,36 +118,38 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = ACCESS_TOKEN_EXPIRE_MINUTES
     FIRST_SUPERUSER_EMAIL: str = "admin@example.com"
-    FIRST_SUPERUSER_PASSWORD: str = "admin"
+    FIRST_SUPERUSER_PASSWORD: str = "mysuperstrongpassword"
 
     # ---------------------------------------------------------------------------
-    # OpenAI-compatible provider (OpenAI API or vLLM)
+    # AI — shared dummy API key
     #
-    # When VLLM_ENABLED=false (default):
-    #   uses OPENAI_BASE_URL  +  OPENAI_MODEL
-    #
-    # When VLLM_ENABLED=true:
-    #   uses VLLM_BASE_URL  +  VLLM_MODEL  (the served name)
-    #   vLLM loads the weights from VLLM_MODEL_HF_ID
+    # Both vLLM and infinity-emb accept any non-empty string when
+    # --api-key is not configured on the server side.  A single field here
+    # avoids duplicating the "not a real key" pattern.
     # ---------------------------------------------------------------------------
-    OPENAI_API_KEY: str = "local-dev-key"
-    OPENAI_BASE_URL: str = "https://api.openai.com/v1"
-    OPENAI_MODEL: str = OPENAI_CHAT_MODEL
+    LLM_API_KEY: str = "vllm-local"
 
-    # vLLM — self-hosted OSS inference (profile: vllm in docker-compose.yml)
-    VLLM_ENABLED: bool = False
+    # ---------------------------------------------------------------------------
+    # AI — vLLM chat container  (writing assistant)
+    #
+    # Docker Compose service: vllm-chat
+    # Model:  Qwen/Qwen2.5-7B-Instruct-AWQ  (~4 GB VRAM, Ada Lovelace)
+    # Port:   8001 → 8000 (container)
+    # Profile: vllm
+    # ---------------------------------------------------------------------------
+    VLLM_CHAT_BASE_URL: str = "http://vllm-chat:8000/v1"
+    VLLM_CHAT_MODEL: str = VLLM_CHAT_MODEL
 
-    # HuggingFace repo the vLLM container downloads (--model flag).
-    # Must be an AWQ-quantized variant to fit in 16 GB VRAM.
-    # Recommended: "Qwen/Qwen2.5-14B-Instruct-AWQ"
-    VLLM_MODEL_HF_ID: str = VLLM_CHAT_MODEL
-
-    # Served model name advertised by the vLLM API (--served-model-name flag).
-    # The backend always uses this value as the `model` parameter — the
-    # actual HF repo path never appears in application code.
-    VLLM_MODEL: str = VLLM_CHAT_MODEL
-
-    VLLM_BASE_URL: str = "http://vllm:8000/v1"
+    # ---------------------------------------------------------------------------
+    # AI — infinity-emb container  (RAG embeddings)
+    #
+    # Docker Compose service: infinity
+    # Model:  BAAI/bge-base-en-v1.5  (768 dims, CPU, ~440 MB)
+    # Port:   8002 → 7997 (container)
+    # Profile: vllm
+    # ---------------------------------------------------------------------------
+    VLLM_EMBED_BASE_URL: str = "http://infinity:7997/v1"
+    VLLM_EMBED_MODEL: str = VLLM_EMBED_MODEL
 
     # ---------------------------------------------------------------------------
     # CORS
@@ -145,34 +158,6 @@ class Settings(BaseSettings):
         "http://localhost:3000",
         "http://localhost:5173",
     ]
-
-    # ---------------------------------------------------------------------------
-    # Computed properties
-    # ---------------------------------------------------------------------------
-
-    @property
-    def active_model(self) -> str:
-        """Return the model name that will be passed to the AI provider.
-
-        When ``VLLM_ENABLED`` is ``True`` this returns ``VLLM_MODEL`` (the
-        served name, e.g. ``"qwen2.5-14b"``).  When ``False`` it returns
-        ``OPENAI_MODEL`` (e.g. ``"gpt-4o"``).
-
-        Returns:
-            The string passed as ``model=`` in every
-            ``chat.completions.create`` call.
-        """
-        return self.VLLM_MODEL if self.VLLM_ENABLED else self.OPENAI_MODEL
-
-    @property
-    def active_base_url(self) -> str:
-        """Return the base URL for the currently active AI provider.
-
-        Returns:
-            ``VLLM_BASE_URL`` when ``VLLM_ENABLED`` is ``True``, otherwise
-            ``OPENAI_BASE_URL``.
-        """
-        return self.VLLM_BASE_URL if self.VLLM_ENABLED else self.OPENAI_BASE_URL
 
 
 settings = Settings()

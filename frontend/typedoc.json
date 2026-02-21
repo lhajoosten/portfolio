@@ -46,7 +46,7 @@
   "treatValidationWarningsAsErrors": false,
 
   "validation": {
-    "notExported": true,
+    "notExported": false,
     "invalidLink": false,
     "notDocumented": false
   },
@@ -55,10 +55,12 @@
 
   "blockTags": [
     "@param",
+    "@typeParam",
     "@returns",
     "@throws",
     "@example",
     "@deprecated",
+    "@module",
     "@since",
     "@see",
     "@internal",

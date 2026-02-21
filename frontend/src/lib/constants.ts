@@ -9,6 +9,8 @@ export const ROUTES = {
   CONTACT: "/contact",
   ADMIN: "/admin",
   ADMIN_PROJECTS: "/admin/projects",
+  ADMIN_PROJECT_NEW: "/admin/projects/new",
+  ADMIN_PROJECT_EDIT: (slug: string) => `/admin/projects/${slug}`,
   ADMIN_POSTS: "/admin/posts",
   ADMIN_CERTIFICATIONS: "/admin/certifications",
 } as const;

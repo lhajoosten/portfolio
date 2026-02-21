@@ -1,10 +1,17 @@
 import { createLazyFileRoute, Link } from "@tanstack/react-router";
 
+import { SidebarCard, TagPill } from "@/components/ui";
 import { useProject } from "@/hooks/useProjects";
+import { getTagVariant } from "@/lib/tags";
+import type { ProjectResponse } from "@/lib/api/types.gen";
 
 export const Route = createLazyFileRoute("/projects/$slug")({
   component: ProjectDetailPage,
 });
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 function ProjectDetailPage() {
   const { slug } = Route.useParams();
@@ -12,65 +19,37 @@ function ProjectDetailPage() {
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 48px",
-        }}
-      >
-        <p style={{ color: "var(--muted)" }}>Loading project…</p>
+      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "64px 48px" }}>
+        <p style={{ color: "var(--muted)", fontFamily: "var(--font-mono)", fontSize: "13px" }}>
+          Loading project…
+        </p>
       </div>
     );
   }
 
   if (error || !project) {
     return (
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 48px",
-        }}
-      >
-        <p style={{ color: "var(--danger)", marginBottom: "16px" }}>Project not found.</p>
-        <Link
-          to="/projects"
+      <div style={{ maxWidth: "1280px", margin: "0 auto", padding: "64px 48px" }}>
+        <p
+          role="alert"
           style={{
+            color: "var(--danger)",
             fontFamily: "var(--font-mono)",
             fontSize: "13px",
-            color: "var(--muted)",
-            textDecoration: "none",
+            marginBottom: "16px",
           }}
+        >
+          Project not found.
+        </p>
+        <Link
+          to="/projects"
+          className="link-muted"
+          style={{ fontFamily: "var(--font-mono)", fontSize: "13px" }}
         >
           ← Back to projects
         </Link>
       </div>
     );
-  }
-
-  const tagVariants: Record<string, { bg: string; color: string }> = {
-    lime: {
-      bg: "rgba(200,255,71,0.1)",
-      color: "var(--accent)",
-    },
-    blue: {
-      bg: "rgba(61,90,254,0.15)",
-      color: "#818cf8",
-    },
-    gray: {
-      bg: "rgba(255,255,255,0.04)",
-      color: "var(--muted)",
-    },
-  };
-
-  function getTagVariant(tag: string): "lime" | "blue" | "gray" {
-    const lower = tag.toLowerCase();
-    if (["ai", "llm", "rag", "openai", "langchain", "langgraph", "mcp"].includes(lower))
-      return "lime";
-    if (["fastapi", "python", "react", "typescript", "postgres", "pgvector"].includes(lower))
-      return "blue";
-    return "gray";
   }
 
   return (
@@ -103,13 +82,8 @@ function ProjectDetailPage() {
           >
             <Link
               to="/projects"
-              style={{ color: "var(--muted)", textDecoration: "none" }}
-              onMouseEnter={(e) =>
-                ((e.currentTarget as HTMLAnchorElement).style.color = "var(--text)")
-              }
-              onMouseLeave={(e) =>
-                ((e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)")
-              }
+              className="link-muted"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "12px" }}
             >
               Projects
             </Link>
@@ -119,50 +93,11 @@ function ProjectDetailPage() {
 
           {/* Tags */}
           {(project.tags ?? []).length > 0 && (
-            <div
-              style={{
-                display: "flex",
-                gap: "6px",
-                flexWrap: "wrap",
-                marginBottom: "16px",
-              }}
-            >
-              {project.featured && (
-                <span
-                  style={{
-                    fontFamily: "var(--font-mono)",
-                    fontSize: "10px",
-                    padding: "3px 8px",
-                    borderRadius: "3px",
-                    letterSpacing: "0.06em",
-                    textTransform: "uppercase",
-                    background: "rgba(200,255,71,0.1)",
-                    color: "var(--accent)",
-                  }}
-                >
-                  Featured
-                </span>
-              )}
-              {(project.tags ?? []).map((tag) => {
-                const v = getTagVariant(tag);
-                return (
-                  <span
-                    key={tag}
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "10px",
-                      padding: "3px 8px",
-                      borderRadius: "3px",
-                      letterSpacing: "0.06em",
-                      textTransform: "uppercase",
-                      background: tagVariants[v].bg,
-                      color: tagVariants[v].color,
-                    }}
-                  >
-                    {tag}
-                  </span>
-                );
-              })}
+            <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "16px" }}>
+              {project.featured && <TagPill label="Featured" variant="lime" />}
+              {(project.tags ?? []).map((tag) => (
+                <TagPill key={tag} label={tag} variant={getTagVariant(tag)} />
+              ))}
             </div>
           )}
 
@@ -192,120 +127,63 @@ function ProjectDetailPage() {
           </p>
 
           {/* Meta strip */}
-          <div
-            style={{
-              display: "flex",
-              gap: "24px",
-              padding: "20px",
-              background: "var(--surface)",
-              border: "1px solid var(--border)",
-              borderRadius: "var(--r-md)",
-              flexWrap: "wrap",
-            }}
-          >
-            <MetaItem label="Year" value={String(new Date(project.created_at).getFullYear())} />
-            <MetaDivider />
-            <MetaItem
-              label="Status"
-              value={project.published ? "Published" : "Draft"}
-              highlight={project.published}
-            />
-            {project.live_url && (
-              <>
-                <MetaDivider />
-                <MetaItem label="Live" value="Available" highlight />
-              </>
-            )}
-          </div>
+          <MetaStrip project={project} />
         </div>
 
         {/* Right — sticky sidebar */}
         <div style={{ position: "sticky", top: "80px" }}>
-          {/* Tech stack card */}
           {(project.tech_stack ?? []).length > 0 && (
             <SidebarCard title="Tech Stack">
-              <div style={{ display: "flex", flexWrap: "wrap", gap: "8px" }}>
-                {(project.tech_stack ?? []).map((tech) => {
-                  const v = getTagVariant(tech);
-                  return (
-                    <span
-                      key={tech}
-                      style={{
-                        fontFamily: "var(--font-mono)",
-                        fontSize: "11px",
-                        padding: "5px 12px",
-                        borderRadius: "4px",
-                        letterSpacing: "0.04em",
-                        background: tagVariants[v].bg,
-                        color: tagVariants[v].color,
-                        border:
-                          v === "lime"
-                            ? "1px solid rgba(200,255,71,0.2)"
-                            : v === "blue"
-                              ? "1px solid rgba(61,90,254,0.25)"
-                              : "1px solid var(--border)",
-                      }}
-                    >
-                      {tech}
-                    </span>
-                  );
-                })}
-              </div>
+              {(project.tech_stack ?? []).map((tech) => (
+                <TagPill key={tech} label={tech} variant={getTagVariant(tech)} size="md" />
+              ))}
             </SidebarCard>
           )}
 
-          {/* Links card */}
-          {(project.live_url || project.repo_url) && (
-            <SidebarCard title="Links">
-              <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-                {project.live_url && (
-                  <a
-                    href={project.live_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "14px",
-                      color: "var(--text)",
-                      textDecoration: "none",
-                      fontWeight: 600,
-                    }}
-                    onMouseEnter={(e) =>
-                      ((e.currentTarget as HTMLAnchorElement).style.color = "var(--accent)")
-                    }
-                    onMouseLeave={(e) =>
-                      ((e.currentTarget as HTMLAnchorElement).style.color = "var(--text)")
-                    }
-                  >
-                    <span>🔗</span> Live Demo
-                  </a>
-                )}
-                {project.repo_url && (
-                  <a
-                    href={project.repo_url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "8px",
-                      fontSize: "14px",
-                      color: "var(--muted)",
-                      textDecoration: "none",
-                    }}
-                    onMouseEnter={(e) =>
-                      ((e.currentTarget as HTMLAnchorElement).style.color = "var(--text)")
-                    }
-                    onMouseLeave={(e) =>
-                      ((e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)")
-                    }
-                  >
-                    <span>📦</span> GitHub Repo
-                  </a>
-                )}
-              </div>
+          {(project.live_url ?? project.repo_url) && (
+            <SidebarCard title="Links" contentStyle={{ flexDirection: "column", gap: "10px" }}>
+              {project.live_url && (
+                <a
+                  href={project.live_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "14px",
+                    color: "var(--text)",
+                    textDecoration: "none",
+                    fontWeight: 600,
+                    transition: "color 0.15s",
+                  }}
+                  onMouseEnter={(e) =>
+                    ((e.currentTarget as HTMLAnchorElement).style.color = "var(--accent)")
+                  }
+                  onMouseLeave={(e) =>
+                    ((e.currentTarget as HTMLAnchorElement).style.color = "var(--text)")
+                  }
+                >
+                  <span>🔗</span> Live Demo
+                </a>
+              )}
+              {project.repo_url && (
+                <a
+                  href={project.repo_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="link-muted"
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "14px",
+                    fontFamily: "var(--font-mono)",
+                  }}
+                >
+                  <span>📦</span> GitHub Repo
+                </a>
+              )}
             </SidebarCard>
           )}
         </div>
@@ -328,7 +206,41 @@ function ProjectDetailPage() {
 }
 
 // ---------------------------------------------------------------------------
-// Shared sub-components
+// MetaStrip
+// ---------------------------------------------------------------------------
+
+function MetaStrip({ project }: { project: ProjectResponse }) {
+  return (
+    <div
+      style={{
+        display: "flex",
+        gap: "24px",
+        padding: "20px",
+        background: "var(--surface)",
+        border: "1px solid var(--border)",
+        borderRadius: "var(--r-md)",
+        flexWrap: "wrap",
+      }}
+    >
+      <MetaItem label="Year" value={String(new Date(project.created_at).getFullYear())} />
+      <MetaDivider />
+      <MetaItem
+        label="Status"
+        value={project.published ? "Published" : "Draft"}
+        highlight={project.published}
+      />
+      {project.live_url && (
+        <>
+          <MetaDivider />
+          <MetaItem label="Live" value="Available" highlight />
+        </>
+      )}
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// MetaItem / MetaDivider
 // ---------------------------------------------------------------------------
 
 function MetaItem({
@@ -379,34 +291,3 @@ function MetaDivider() {
     />
   );
 }
-
-function SidebarCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--r-lg)",
-        overflow: "hidden",
-        marginBottom: "16px",
-      }}
-    >
-      <div
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: "11px",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: "var(--muted)",
-          padding: "16px 20px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        {title}
-      </div>
-      <div style={{ padding: "20px" }}>{children}</div>
-    </div>
-  );
-}
-
-import type React from "react";

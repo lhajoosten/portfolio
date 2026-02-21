@@ -1,10 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { TerminalCard } from "@/components/TerminalCard";
+import { TagPill } from "@/components/ui/TagPill";
+import { getFeaturedProjectsApiV1ProjectsFeaturedGetOptions } from "@/lib/api/@tanstack/react-query.gen";
 import { useFeaturedProjects } from "@/hooks/useProjects";
+import { getTagVariant } from "@/lib/tags";
+import type { ProjectResponse } from "@/lib/api/types.gen";
 
 export const Route = createFileRoute("/")({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.prefetchQuery(getFeaturedProjectsApiV1ProjectsFeaturedGetOptions()),
   component: HomePage,
 });
+
+const STATS = [
+  { value: "5+", label: "Projects shipped" },
+  { value: "0", label: "Certifications" },
+  { value: "2y+", label: "Software Engineering" },
+  { value: "~6mo", label: "AI / LLM focus" },
+] as const;
 
 function HomePage() {
   const { data: featured = [] } = useFeaturedProjects();
@@ -25,7 +39,7 @@ function HomePage() {
           position: "relative",
         }}
       >
-        {/* Left */}
+        {/* Left — copy */}
         <div style={{ paddingRight: "80px" }}>
           {/* Eyebrow */}
           <div
@@ -49,7 +63,7 @@ function HomePage() {
                 background: "var(--accent)",
               }}
             />
-            Full Stack Engineer · AI / LLM Specialist
+            Full Stack Engineer · AI Agent Builder · Crowe Foederer
           </div>
 
           {/* Headline */}
@@ -62,12 +76,12 @@ function HomePage() {
               marginBottom: "24px",
             }}
           >
-            Building the future of
+            Engineering intelligent
             <br />
-            <em style={{ fontStyle: "italic", color: "var(--accent)" }}>accountancy with AI</em>
+            <em style={{ fontStyle: "italic", color: "var(--accent)" }}>AI-powered systems</em>
           </h1>
 
-          {/* Sub */}
+          {/* Sub-heading */}
           <p
             style={{
               fontSize: "18px",
@@ -77,30 +91,26 @@ function HomePage() {
               marginBottom: "40px",
             }}
           >
-            I design and ship LLM-powered platforms that bring intelligent automation to financial
-            teams — from RAG pipelines to agent workflows to production-grade APIs.
+            Full-stack engineer at{" "}
+            <span style={{ color: "var(--text)", fontWeight: 500 }}>Crowe Foederer</span> building
+            LLM automation platforms for accountancy and BI. Creator of{" "}
+            <span style={{ color: "var(--text)", fontWeight: 500 }}>CodeGraph</span> — autonomous AI
+            coding agents powered by LangGraph and Claude.
           </p>
 
           {/* CTAs */}
           <div style={{ display: "flex", gap: "16px", alignItems: "center" }}>
             <Link
               to="/projects"
+              className="btn-cta"
               style={{
                 padding: "14px 28px",
-                background: "var(--accent)",
-                color: "#000",
+                fontSize: "14px",
+                borderRadius: "var(--r-sm)",
                 fontFamily: "var(--font-body)",
                 fontWeight: 700,
-                fontSize: "14px",
-                border: "none",
-                borderRadius: "var(--r-sm)",
-                cursor: "pointer",
                 letterSpacing: "0.02em",
-                textDecoration: "none",
-                transition: "opacity 0.2s",
               }}
-              onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.opacity = "0.85")}
-              onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.opacity = "1")}
             >
               View Projects →
             </Link>
@@ -141,14 +151,8 @@ function HomePage() {
               borderTop: "1px solid var(--border)",
             }}
           >
-            {(
-              [
-                { n: "12+", l: "Projects shipped" },
-                { n: "5", l: "Certifications" },
-                { n: "2y", l: "AI / LLM focus" },
-              ] as const
-            ).map(({ n, l }) => (
-              <div key={l}>
+            {STATS.map(({ value, label }) => (
+              <div key={label}>
                 <div
                   style={{
                     fontFamily: "var(--font-display)",
@@ -158,7 +162,7 @@ function HomePage() {
                     lineHeight: 1,
                   }}
                 >
-                  {n}
+                  {value}
                 </div>
                 <div
                   style={{
@@ -167,7 +171,7 @@ function HomePage() {
                     marginTop: "4px",
                   }}
                 >
-                  {l}
+                  {label}
                 </div>
               </div>
             ))}
@@ -196,11 +200,11 @@ function HomePage() {
           }}
         >
           <div
+            className="animate-scroll-down"
             style={{
               width: "1px",
               height: "48px",
               background: "linear-gradient(to bottom, var(--accent), transparent)",
-              animation: "scroll-down 2s ease-in-out infinite",
             }}
           />
           Scroll
@@ -216,6 +220,7 @@ function HomePage() {
             padding: "80px 48px 120px",
           }}
         >
+          {/* Section header */}
           <div
             style={{
               display: "flex",
@@ -243,6 +248,7 @@ function HomePage() {
                   fontSize: "36px",
                   letterSpacing: "-0.02em",
                   lineHeight: 1.05,
+                  margin: 0,
                 }}
               >
                 Featured Projects
@@ -250,18 +256,14 @@ function HomePage() {
             </div>
             <Link
               to="/projects"
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "12px",
-                color: "var(--accent)",
-                textDecoration: "none",
-                letterSpacing: "0.04em",
-              }}
+              className="link-accent"
+              style={{ fontFamily: "var(--font-mono)", fontSize: "12px", letterSpacing: "0.04em" }}
             >
               View all →
             </Link>
           </div>
 
+          {/* Cards grid */}
           <div
             style={{
               display: "grid",
@@ -270,138 +272,7 @@ function HomePage() {
             }}
           >
             {featured.map((project) => (
-              <Link
-                key={project.id}
-                to="/projects/$slug"
-                params={{ slug: project.slug }}
-                style={{ textDecoration: "none" }}
-              >
-                <div
-                  style={{
-                    background: "var(--surface)",
-                    border: "1px solid var(--border)",
-                    borderRadius: "var(--r-lg)",
-                    overflow: "hidden",
-                    transition: "border-color 0.2s, transform 0.2s",
-                    cursor: "pointer",
-                  }}
-                  onMouseEnter={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border2)";
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-                  }}
-                  onMouseLeave={(e) => {
-                    (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)";
-                    (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-                  }}
-                >
-                  {/* Thumb */}
-                  <div
-                    style={{
-                      height: "180px",
-                      background: "linear-gradient(135deg, var(--surface2), #1a1a2e)",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "11px",
-                      color: "rgba(200,255,71,0.3)",
-                      letterSpacing: "0.08em",
-                      textTransform: "uppercase",
-                      position: "relative",
-                      overflow: "hidden",
-                    }}
-                  >
-                    <div
-                      style={{
-                        position: "absolute",
-                        inset: 0,
-                        background:
-                          "radial-gradient(circle at 30% 50%, rgba(200,255,71,0.06), transparent 60%)",
-                      }}
-                    />
-                    {project.slug}
-                  </div>
-
-                  {/* Info */}
-                  <div style={{ padding: "24px" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        gap: "6px",
-                        marginBottom: "12px",
-                        flexWrap: "wrap",
-                      }}
-                    >
-                      {(project.tags ?? []).slice(0, 3).map((tag) => (
-                        <span
-                          key={tag}
-                          style={{
-                            fontFamily: "var(--font-mono)",
-                            fontSize: "10px",
-                            padding: "3px 8px",
-                            borderRadius: "3px",
-                            letterSpacing: "0.06em",
-                            textTransform: "uppercase",
-                            background: "rgba(200,255,71,0.1)",
-                            color: "var(--accent)",
-                          }}
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                    <div
-                      style={{
-                        fontFamily: "var(--font-display)",
-                        fontSize: "22px",
-                        marginBottom: "8px",
-                        letterSpacing: "-0.01em",
-                        color: "var(--text)",
-                      }}
-                    >
-                      {project.title}
-                    </div>
-                    <p
-                      style={{
-                        fontSize: "14px",
-                        color: "var(--muted)",
-                        lineHeight: 1.6,
-                        marginBottom: "20px",
-                      }}
-                    >
-                      {project.description}
-                    </p>
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        paddingTop: "16px",
-                        borderTop: "1px solid var(--border)",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontFamily: "var(--font-mono)",
-                          fontSize: "11px",
-                          color: "var(--muted)",
-                        }}
-                      >
-                        {new Date(project.created_at).getFullYear()}
-                      </span>
-                      <span
-                        style={{
-                          fontSize: "13px",
-                          color: "var(--accent)",
-                          fontWeight: 600,
-                        }}
-                      >
-                        View project →
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </Link>
+              <FeaturedProjectCard key={project.id} project={project} />
             ))}
           </div>
         </section>
@@ -410,231 +281,108 @@ function HomePage() {
   );
 }
 
-/* ── Terminal card component ─────────────────────────────────── */
-function TerminalCard() {
-  const codeLines: Array<{ tokens: Array<{ type: string; text: string }> }> = [
-    { tokens: [{ type: "cm", text: "# ── Stack ──────────────────" }] },
-    {
-      tokens: [
-        { type: "kw", text: "stack" },
-        { type: "plain", text: " = {" },
-      ],
-    },
-    {
-      tokens: [
-        { type: "plain", text: '  "' },
-        { type: "str", text: "backend" },
-        { type: "plain", text: '": [' },
-        { type: "str", text: '"FastAPI"' },
-        { type: "plain", text: ", " },
-        { type: "str", text: '"Python 3.12"' },
-        { type: "plain", text: "]," },
-      ],
-    },
-    {
-      tokens: [
-        { type: "plain", text: '  "' },
-        { type: "str", text: "ai" },
-        { type: "plain", text: '": [' },
-        { type: "str", text: '"OpenAI"' },
-        { type: "plain", text: ", " },
-        { type: "str", text: '"pgvector"' },
-        { type: "plain", text: "]," },
-      ],
-    },
-    {
-      tokens: [
-        { type: "plain", text: '  "' },
-        { type: "str", text: "frontend" },
-        { type: "plain", text: '": [' },
-        { type: "str", text: '"React 19"' },
-        { type: "plain", text: ", " },
-        { type: "str", text: '"TypeScript"' },
-        { type: "plain", text: "]," },
-      ],
-    },
-    { tokens: [{ type: "plain", text: "}" }] },
-    { tokens: [{ type: "plain", text: " " }] },
-    { tokens: [{ type: "cm", text: "# ── Current focus ──────────" }] },
-    {
-      tokens: [
-        { type: "kw", text: "async def" },
-        { type: "plain", text: " " },
-        { type: "fn", text: "ship" },
-        { type: "plain", text: "():" },
-      ],
-    },
-    {
-      tokens: [
-        { type: "plain", text: "  " },
-        { type: "kw", text: "await" },
-        { type: "plain", text: " " },
-        { type: "fn", text: "build_rag_pipeline" },
-        { type: "plain", text: "()" },
-      ],
-    },
-    {
-      tokens: [
-        { type: "plain", text: "  " },
-        { type: "kw", text: "await" },
-        { type: "plain", text: " " },
-        { type: "fn", text: "deploy_agents" },
-        { type: "plain", text: "(" },
-      ],
-    },
-    {
-      tokens: [
-        { type: "plain", text: "    model=" },
-        { type: "str", text: '"gpt-4o"' },
-        { type: "plain", text: ", tools=" },
-        { type: "num", text: "∞" },
-      ],
-    },
-    { tokens: [{ type: "plain", text: "  )" }] },
-  ];
+// ---------------------------------------------------------------------------
+// FeaturedProjectCard
+// ---------------------------------------------------------------------------
 
-  const tokenColors: Record<string, string> = {
-    kw: "#a78bfa",
-    str: "var(--accent)",
-    fn: "#60a5fa",
-    cm: "#3d3d44",
-    num: "#f97316",
-    plain: "var(--muted)",
-  };
-
-  const chips = [
-    { label: "FastAPI", variant: "lime" },
-    { label: "LangChain", variant: "lime" },
-    { label: "React 19", variant: "blue" },
-    { label: "pgvector", variant: "blue" },
-    { label: "OpenAI", variant: "gray" },
-    { label: "Python 3.12", variant: "gray" },
-  ];
-
-  const chipStyles: Record<string, React.CSSProperties> = {
-    lime: {
-      background: "rgba(200,255,71,0.1)",
-      color: "var(--accent)",
-      border: "1px solid rgba(200,255,71,0.2)",
-    },
-    blue: {
-      background: "rgba(61,90,254,0.15)",
-      color: "#818cf8",
-      border: "1px solid rgba(61,90,254,0.25)",
-    },
-    gray: {
-      background: "rgba(255,255,255,0.04)",
-      color: "var(--muted)",
-      border: "1px solid var(--border)",
-    },
-  };
-
+function FeaturedProjectCard({ project }: { project: ProjectResponse }) {
   return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--r-lg)",
-        overflow: "hidden",
-        position: "relative",
-      }}
-    >
-      {/* Title bar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: "8px",
-          padding: "14px 20px",
-          borderBottom: "1px solid var(--border)",
-          background: "var(--surface2)",
-        }}
-      >
+    <Link to="/projects/$slug" params={{ slug: project.slug }} style={{ textDecoration: "none" }}>
+      <div className="card" style={{ overflow: "hidden" }}>
+        {/* Thumb */}
         <div
           style={{
-            width: 10,
-            height: 10,
-            borderRadius: "50%",
-            background: "#ff5f57",
-          }}
-        />
-        <div
-          style={{
-            width: 10,
-            height: 10,
-            borderRadius: "50%",
-            background: "#febc2e",
-          }}
-        />
-        <div
-          style={{
-            width: 10,
-            height: 10,
-            borderRadius: "50%",
-            background: "#28c840",
-          }}
-        />
-        <span
-          style={{
+            height: "180px",
+            background: "linear-gradient(135deg, var(--surface2), #1a1a2e)",
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
             fontFamily: "var(--font-mono)",
             fontSize: "11px",
-            color: "var(--muted)",
-            marginLeft: "auto",
-            marginRight: "auto",
-            letterSpacing: "0.06em",
+            color: "rgba(200,255,71,0.3)",
+            letterSpacing: "0.08em",
+            textTransform: "uppercase",
+            position: "relative",
+            overflow: "hidden",
           }}
         >
-          profile.py
-        </span>
-      </div>
-
-      {/* Code body */}
-      <div style={{ padding: "28px" }}>
-        {codeLines.map((line, i) => (
           <div
-            key={i}
             style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "13px",
-              lineHeight: 2,
+              position: "absolute",
+              inset: 0,
+              background:
+                "radial-gradient(circle at 30% 50%, rgba(200,255,71,0.06), transparent 60%)",
+            }}
+          />
+          {project.slug}
+        </div>
+
+        {/* Info */}
+        <div style={{ padding: "24px" }}>
+          {/* Tags */}
+          <div
+            style={{
+              display: "flex",
+              gap: "6px",
+              marginBottom: "12px",
+              flexWrap: "wrap",
             }}
           >
-            {line.tokens.map((token, j) => (
-              <span key={j} style={{ color: tokenColors[token.type] ?? "var(--muted)" }}>
-                {token.text}
-              </span>
+            {(project.tags ?? []).slice(0, 3).map((tag) => (
+              <TagPill key={tag} label={tag} variant={getTagVariant(tag)} />
             ))}
           </div>
-        ))}
 
-        {/* Skill chips */}
-        <div
-          style={{
-            display: "flex",
-            flexWrap: "wrap",
-            gap: "8px",
-            marginTop: "24px",
-          }}
-        >
-          {chips.map(({ label, variant }) => (
+          {/* Title */}
+          <div
+            style={{
+              fontFamily: "var(--font-display)",
+              fontSize: "22px",
+              marginBottom: "8px",
+              letterSpacing: "-0.01em",
+              color: "var(--text)",
+            }}
+          >
+            {project.title}
+          </div>
+
+          {/* Description */}
+          <p
+            style={{
+              fontSize: "14px",
+              color: "var(--muted)",
+              lineHeight: 1.6,
+              marginBottom: "20px",
+            }}
+          >
+            {project.description}
+          </p>
+
+          {/* Footer */}
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingTop: "16px",
+              borderTop: "1px solid var(--border)",
+            }}
+          >
             <span
-              key={label}
               style={{
                 fontFamily: "var(--font-mono)",
                 fontSize: "11px",
-                padding: "5px 12px",
-                borderRadius: "4px",
-                letterSpacing: "0.04em",
-                ...chipStyles[variant],
+                color: "var(--muted)",
               }}
             >
-              {label}
+              {new Date(project.created_at).getFullYear()}
             </span>
-          ))}
+            <span className="link-accent" style={{ fontSize: "13px", fontWeight: 600 }}>
+              View project →
+            </span>
+          </div>
         </div>
       </div>
-    </div>
+    </Link>
   );
 }
-
-import type React from "react";

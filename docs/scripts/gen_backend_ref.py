@@ -98,6 +98,27 @@ def generate() -> None:
 
     nav = mkdocs_gen_files.Nav()
 
+    # Emit a section index page so Material's navigation.indexes feature works
+    index_path = Path(OUTPUT_PREFIX) / "index.md"
+    with mkdocs_gen_files.open(index_path, "w") as f:
+        f.write("# Backend API Reference\n\n")
+        f.write(
+            "Auto-generated reference documentation for the FastAPI backend.\n\n"
+            "Each page corresponds to one Python module and is built directly\n"
+            "from the source docstrings via [mkdocstrings](https://mkdocstrings.github.io/).\n\n"
+            "## Module tree\n\n"
+            "Use the navigation panel on the left to browse modules by layer:\n\n"
+            "| Layer | Path | Purpose |\n"
+            "|---|---|---|\n"
+            "| Routes | `app/api/v1/routes/` | Thin HTTP handlers — parse, delegate, return |\n"
+            "| Services | `app/services/` | Business logic and AI orchestration |\n"
+            "| Repositories | `app/repositories/` | All SQL queries |\n"
+            "| Models | `app/models/` | SQLAlchemy ORM models |\n"
+            "| Schemas | `app/schemas/` | Pydantic request/response schemas |\n"
+            "| Core | `app/core/` | Config, exceptions, security, middleware |\n"
+            "| Database | `app/db/` | AsyncSession factory and engine |\n"
+        )
+
     py_files: list[Path] = sorted(BACKEND_SRC.rglob("*.py"))
 
     for py_file in py_files:
@@ -114,7 +135,7 @@ def generate() -> None:
 
         # Humanise the nav labels (title-case, replace underscores)
         nav_parts = [p.replace("_", " ").title() for p in parts]
-        nav[nav_parts] = doc_path.as_posix()
+        nav[nav_parts] = doc_path.relative_to(OUTPUT_PREFIX).as_posix()
 
         # Emit the reference page
         with mkdocs_gen_files.open(doc_path, "w") as f:

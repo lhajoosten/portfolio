@@ -133,7 +133,7 @@ def _inject_typedoc_pages() -> None:
         nav_parts = [p.replace("-", " ").replace("_", " ").title() for p in parts]
 
         if nav_parts:
-            nav[nav_parts] = out_path.as_posix()
+            nav[nav_parts] = out_path.relative_to(OUTPUT_PREFIX).as_posix()
 
         content = md_file.read_text(encoding="utf-8")
         content = _patch_typedoc_markdown(content)

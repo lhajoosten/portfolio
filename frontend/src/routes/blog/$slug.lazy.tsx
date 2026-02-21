@@ -1,10 +1,15 @@
 import { createLazyFileRoute, Link } from "@tanstack/react-router";
 
+import { TagPill } from "@/components/ui/TagPill";
 import { usePost } from "@/hooks/usePosts";
 
 export const Route = createLazyFileRoute("/blog/$slug")({
   component: PostDetailPage,
 });
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 function PostDetailPage() {
   const { slug } = Route.useParams();
@@ -12,36 +17,32 @@ function PostDetailPage() {
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          maxWidth: "720px",
-          margin: "0 auto",
-          padding: "64px 48px",
-        }}
-      >
-        <p style={{ color: "var(--muted)" }}>Loading post…</p>
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "64px 48px" }}>
+        <p style={{ color: "var(--muted)", fontFamily: "var(--font-mono)", fontSize: "13px" }}>
+          Loading post…
+        </p>
       </div>
     );
   }
 
   if (error || !post) {
     return (
-      <div
-        style={{
-          maxWidth: "720px",
-          margin: "0 auto",
-          padding: "64px 48px",
-        }}
-      >
-        <p style={{ color: "var(--danger)", marginBottom: "16px" }}>Post not found.</p>
-        <Link
-          to="/blog"
+      <div style={{ maxWidth: "720px", margin: "0 auto", padding: "64px 48px" }}>
+        <p
+          role="alert"
           style={{
+            color: "var(--danger)",
             fontFamily: "var(--font-mono)",
             fontSize: "13px",
-            color: "var(--muted)",
-            textDecoration: "none",
+            marginBottom: "16px",
           }}
+        >
+          Post not found.
+        </p>
+        <Link
+          to="/blog"
+          className="link-muted"
+          style={{ fontFamily: "var(--font-mono)", fontSize: "13px" }}
         >
           ← Back to blog
         </Link>
@@ -62,6 +63,7 @@ function PostDetailPage() {
       {/* Back link */}
       <Link
         to="/blog"
+        className="link-muted"
         style={{
           display: "inline-flex",
           alignItems: "center",
@@ -69,13 +71,8 @@ function PostDetailPage() {
           fontFamily: "var(--font-mono)",
           fontSize: "12px",
           letterSpacing: "0.04em",
-          color: "var(--muted)",
-          textDecoration: "none",
           marginBottom: "40px",
-          transition: "color 0.2s",
         }}
-        onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "var(--text)")}
-        onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)")}
       >
         ← Blog
       </Link>
@@ -91,21 +88,7 @@ function PostDetailPage() {
           }}
         >
           {tags.map((tag) => (
-            <span
-              key={tag}
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "10px",
-                padding: "3px 8px",
-                borderRadius: "3px",
-                letterSpacing: "0.06em",
-                textTransform: "uppercase",
-                background: "rgba(200,255,71,0.1)",
-                color: "var(--accent)",
-              }}
-            >
-              {tag}
-            </span>
+            <TagPill key={tag} label={tag} variant="lime" />
           ))}
         </div>
       )}
@@ -148,7 +131,7 @@ function PostDetailPage() {
           flexWrap: "wrap",
         }}
       >
-        {/* Author */}
+        {/* Author avatar */}
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
           <div
             style={{
@@ -168,13 +151,7 @@ function PostDetailPage() {
           >
             L
           </div>
-          <span
-            style={{
-              fontSize: "14px",
-              fontWeight: 600,
-              color: "var(--text)",
-            }}
-          >
+          <span style={{ fontSize: "14px", fontWeight: 600, color: "var(--text)" }}>
             Luc Hajoosten
           </span>
         </div>
@@ -183,11 +160,7 @@ function PostDetailPage() {
 
         <time
           dateTime={post.created_at}
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "12px",
-            color: "var(--muted)",
-          }}
+          style={{ fontFamily: "var(--font-mono)", fontSize: "12px", color: "var(--muted)" }}
         >
           {new Date(post.created_at).toLocaleDateString("en-GB", {
             day: "numeric",
@@ -253,18 +226,12 @@ function PostDetailPage() {
       >
         <Link
           to="/blog"
+          className="link-muted"
           style={{
             fontFamily: "var(--font-mono)",
             fontSize: "13px",
-            color: "var(--muted)",
-            textDecoration: "none",
             letterSpacing: "0.04em",
-            transition: "color 0.2s",
           }}
-          onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.color = "var(--text)")}
-          onMouseLeave={(e) =>
-            ((e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)")
-          }
         >
           ← All posts
         </Link>

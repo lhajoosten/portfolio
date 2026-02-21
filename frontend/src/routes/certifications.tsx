@@ -1,102 +1,58 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { ErrorState, LoadingState, PageContainer, PageHeader, TagPill } from "@/components/ui";
 import { useCertifications } from "@/hooks/useCertifications";
+import { getCertificationsApiV1CertificationsGetOptions } from "@/lib/api/@tanstack/react-query.gen";
 import type { CertificationResponse } from "@/lib/api/types.gen";
 
+// ---------------------------------------------------------------------------
+// Route — with prefetch loader
+// ---------------------------------------------------------------------------
+
 export const Route = createFileRoute("/certifications")({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.prefetchQuery(
+      getCertificationsApiV1CertificationsGetOptions({ query: { featured_only: false } }),
+    ),
   component: CertificationsPage,
 });
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
 
 function CertificationsPage() {
   const { data: certs = [], isLoading, error } = useCertifications();
 
   if (isLoading) {
     return (
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 48px",
-        }}
-      >
-        <p style={{ color: "var(--muted)" }}>Loading certifications…</p>
-      </div>
+      <PageContainer style={{ paddingBottom: "64px" }}>
+        <LoadingState message="Loading certifications…" />
+      </PageContainer>
     );
   }
 
   if (error) {
     return (
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 48px",
-        }}
-      >
-        <p style={{ color: "var(--danger)" }}>Failed to load certifications.</p>
-      </div>
+      <PageContainer style={{ paddingBottom: "64px" }}>
+        <ErrorState message="Failed to load certifications." />
+      </PageContainer>
     );
   }
 
   const featured = certs.filter((c) => c.featured);
   const rest = certs.filter((c) => !c.featured);
-  const ordered = [...featured, ...rest];
 
   return (
-    <div
-      style={{
-        maxWidth: "1280px",
-        margin: "0 auto",
-        padding: "64px 48px 120px",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          marginBottom: "56px",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "11px",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "var(--accent)",
-              marginBottom: "12px",
-            }}
-          >
-            Credentials
-          </div>
-          <h1
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "52px",
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-            }}
-          >
-            Certifications
-          </h1>
-        </div>
-        <p
-          style={{
-            maxWidth: "320px",
-            color: "var(--muted)",
-            fontSize: "15px",
-            lineHeight: 1.7,
-          }}
-        >
-          Formal credentials that validate the skills I apply every day in production.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader
+        eyebrow="Credentials"
+        title="Certifications"
+        description="Formal credentials that validate the skills I apply every day in production."
+      />
 
       {/* Empty state */}
-      {ordered.length === 0 && (
+      {certs.length === 0 && (
         <p
           style={{
             color: "var(--muted)",
@@ -108,21 +64,10 @@ function CertificationsPage() {
         </p>
       )}
 
-      {/* Featured row */}
+      {/* Featured section */}
       {featured.length > 0 && (
         <>
-          <div
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "9px",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "var(--muted)",
-              marginBottom: "16px",
-            }}
-          >
-            Featured
-          </div>
+          <SectionLabel>Featured</SectionLabel>
           <div
             style={{
               display: "grid",
@@ -141,20 +86,7 @@ function CertificationsPage() {
       {/* All certifications */}
       {rest.length > 0 && (
         <>
-          {featured.length > 0 && (
-            <div
-              style={{
-                fontFamily: "var(--font-mono)",
-                fontSize: "9px",
-                letterSpacing: "0.1em",
-                textTransform: "uppercase",
-                color: "var(--muted)",
-                marginBottom: "16px",
-              }}
-            >
-              All Certifications
-            </div>
-          )}
+          {featured.length > 0 && <SectionLabel>All Certifications</SectionLabel>}
           <div
             style={{
               display: "grid",
@@ -168,12 +100,33 @@ function CertificationsPage() {
           </div>
         </>
       )}
+    </PageContainer>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// SectionLabel — small mono uppercase divider label
+// ---------------------------------------------------------------------------
+
+function SectionLabel({ children }: { children: string }) {
+  return (
+    <div
+      style={{
+        fontFamily: "var(--font-mono)",
+        fontSize: "9px",
+        letterSpacing: "0.1em",
+        textTransform: "uppercase",
+        color: "var(--muted)",
+        marginBottom: "16px",
+      }}
+    >
+      {children}
     </div>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Certification card
+// CertCard
 // ---------------------------------------------------------------------------
 
 function CertCard({
@@ -187,64 +140,18 @@ function CertCard({
 
   return (
     <div
+      className={highlight ? "card--featured" : "card"}
       style={{
-        background: "var(--surface)",
-        border: highlight ? "1px solid rgba(200,255,71,0.18)" : "1px solid var(--border)",
-        borderRadius: "var(--r-lg)",
         padding: "24px",
         display: "flex",
         flexDirection: "column",
         gap: "16px",
-        transition: "border-color 0.2s, transform 0.2s",
         cursor: "default",
       }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLDivElement).style.borderColor = highlight
-          ? "rgba(200,255,71,0.35)"
-          : "var(--border2)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLDivElement).style.borderColor = highlight
-          ? "rgba(200,255,71,0.18)"
-          : "var(--border)";
-        (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
-      }}
     >
-      {/* Top row — badge + name */}
+      {/* Top row — badge + name + featured pill */}
       <div style={{ display: "flex", alignItems: "flex-start", gap: "16px" }}>
-        {cert.badge_image_url ? (
-          <img
-            src={cert.badge_image_url}
-            alt={`${cert.name} badge`}
-            style={{
-              width: "56px",
-              height: "56px",
-              objectFit: "contain",
-              borderRadius: "8px",
-              flexShrink: 0,
-              background: "var(--surface2)",
-              padding: "4px",
-            }}
-          />
-        ) : (
-          <div
-            style={{
-              width: "56px",
-              height: "56px",
-              borderRadius: "8px",
-              background: "var(--surface2)",
-              border: "1px solid var(--border)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              fontSize: "24px",
-              flexShrink: 0,
-            }}
-          >
-            🎓
-          </div>
-        )}
+        <CertBadge cert={cert} />
 
         <div style={{ minWidth: 0, flex: 1 }}>
           <div
@@ -269,112 +176,139 @@ function CertCard({
           </div>
         </div>
 
-        {highlight && (
-          <span
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "9px",
-              padding: "3px 8px",
-              borderRadius: "3px",
-              letterSpacing: "0.08em",
-              textTransform: "uppercase",
-              background: "rgba(200,255,71,0.1)",
-              color: "var(--accent)",
-              flexShrink: 0,
-            }}
-          >
-            Featured
-          </span>
-        )}
+        {highlight && <TagPill label="Featured" variant="lime" />}
       </div>
 
       {/* Description */}
       {cert.description && (
-        <p
-          style={{
-            fontSize: "13px",
-            color: "var(--muted)",
-            lineHeight: 1.6,
-          }}
-        >
+        <p style={{ fontSize: "13px", color: "var(--muted)", lineHeight: 1.6, margin: 0 }}>
           {cert.description}
         </p>
       )}
 
       {/* Footer — dates + verify link */}
+      <CertFooter cert={cert} isExpired={isExpired} />
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CertBadge — badge image or fallback icon
+// ---------------------------------------------------------------------------
+
+function CertBadge({ cert }: { cert: CertificationResponse }) {
+  if (cert.badge_image_url) {
+    return (
+      <img
+        src={cert.badge_image_url}
+        alt={`${cert.name} badge`}
+        style={{
+          width: "56px",
+          height: "56px",
+          objectFit: "contain",
+          borderRadius: "8px",
+          flexShrink: 0,
+          background: "var(--surface2)",
+          padding: "4px",
+        }}
+      />
+    );
+  }
+
+  return (
+    <div
+      style={{
+        width: "56px",
+        height: "56px",
+        borderRadius: "8px",
+        background: "var(--surface2)",
+        border: "1px solid var(--border)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        fontSize: "24px",
+        flexShrink: 0,
+      }}
+    >
+      🎓
+    </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// CertFooter — issued/expires dates + verify link
+// ---------------------------------------------------------------------------
+
+function CertFooter({ cert, isExpired }: { cert: CertificationResponse; isExpired: boolean }) {
+  return (
+    <div
+      style={{
+        marginTop: "auto",
+        paddingTop: "16px",
+        borderTop: "1px solid var(--border)",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        flexWrap: "wrap",
+        gap: "8px",
+      }}
+    >
+      {/* Dates */}
       <div
         style={{
-          marginTop: "auto",
-          paddingTop: "16px",
-          borderTop: "1px solid var(--border)",
           display: "flex",
           alignItems: "center",
-          justifyContent: "space-between",
+          gap: "10px",
+          fontFamily: "var(--font-mono)",
+          fontSize: "11px",
+          color: "var(--muted)",
           flexWrap: "wrap",
-          gap: "8px",
         }}
       >
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: "10px",
-            fontFamily: "var(--font-mono)",
-            fontSize: "11px",
-            color: "var(--muted)",
-            flexWrap: "wrap",
-          }}
-        >
-          <span>
-            Issued{" "}
-            {new Date(cert.issued_at).toLocaleDateString("en-GB", {
-              month: "short",
-              year: "numeric",
-            })}
-          </span>
+        <span>
+          Issued{" "}
+          {new Date(cert.issued_at).toLocaleDateString("en-GB", {
+            month: "short",
+            year: "numeric",
+          })}
+        </span>
 
-          {cert.expires_at && (
-            <>
-              <span style={{ color: "var(--border2)" }}>·</span>
-              <span style={{ color: isExpired ? "var(--danger)" : "var(--muted)" }}>
-                {isExpired ? "Expired " : "Expires "}
-                {new Date(cert.expires_at).toLocaleDateString("en-GB", {
-                  month: "short",
-                  year: "numeric",
-                })}
-              </span>
-            </>
-          )}
-
-          {!cert.expires_at && (
-            <>
-              <span style={{ color: "var(--border2)" }}>·</span>
-              <span style={{ color: "#4ade80" }}>No expiry</span>
-            </>
-          )}
-        </div>
-
-        {cert.credential_url && (
-          <a
-            href={cert.credential_url}
-            target="_blank"
-            rel="noopener noreferrer"
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "11px",
-              letterSpacing: "0.04em",
-              color: "var(--accent)",
-              textDecoration: "none",
-              fontWeight: 500,
-              transition: "opacity 0.15s",
-            }}
-            onMouseEnter={(e) => ((e.currentTarget as HTMLAnchorElement).style.opacity = "0.7")}
-            onMouseLeave={(e) => ((e.currentTarget as HTMLAnchorElement).style.opacity = "1")}
-          >
-            Verify ↗
-          </a>
+        {cert.expires_at ? (
+          <>
+            <span style={{ color: "var(--border2)" }}>·</span>
+            <span style={{ color: isExpired ? "var(--danger)" : "var(--muted)" }}>
+              {isExpired ? "Expired " : "Expires "}
+              {new Date(cert.expires_at).toLocaleDateString("en-GB", {
+                month: "short",
+                year: "numeric",
+              })}
+            </span>
+          </>
+        ) : (
+          <>
+            <span style={{ color: "var(--border2)" }}>·</span>
+            <span style={{ color: "#4ade80" }}>No expiry</span>
+          </>
         )}
       </div>
+
+      {/* Verify link */}
+      {cert.credential_url && (
+        <a
+          href={cert.credential_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="link-accent"
+          style={{
+            fontFamily: "var(--font-mono)",
+            fontSize: "11px",
+            letterSpacing: "0.04em",
+            fontWeight: 500,
+          }}
+        >
+          Verify ↗
+        </a>
+      )}
     </div>
   );
 }

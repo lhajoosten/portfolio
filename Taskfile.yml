@@ -95,30 +95,68 @@ tasks:
             - pnpm dev
 
     # =============================================================================
-    # vLLM — OSS model served via vllm/vllm-openai (GPU recommended)
+    # vLLM — OSS inference stack  (profile: vllm)
+    #
+    # Two services, both activated by the `vllm` profile:
+    #
+    #   vllm-chat   vLLM serving Qwen/Qwen2.5-7B-Instruct-AWQ
+    #               OpenAI-compatible chat endpoint  →  host port 8001
+    #               Used by WritingService for SSE-streamed text generation
+    #
+    #   infinity    infinity-emb serving BAAI/bge-base-en-v1.5 (CPU)
+    #               OpenAI-compatible embeddings endpoint  →  host port 8002
+    #               Used by RagService for pgvector semantic search
+    #
+    # Requirements: NVIDIA GPU + nvidia-container-toolkit (for vllm-chat only).
+    # infinity runs on CPU — no GPU needed for the embedding container.
     # =============================================================================
     vllm:up:
         desc: >
-            Start the vLLM container (profile: vllm).
-            Default model: Qwen/Qwen2.5-14B-Instruct-AWQ (~7.5 GB, sweet spot for RTX 4080 / 16 GB VRAM).
-            Override by setting VLLM_MODEL_HF_ID and VLLM_MODEL in the root .env.
-            Requires NVIDIA GPU + nvidia-container-toolkit.
+            Start both AI containers: vllm-chat (Qwen2.5-7B-Instruct-AWQ, GPU)
+            and infinity (bge-base-en-v1.5, CPU).
+            Requires NVIDIA GPU + nvidia-container-toolkit for vllm-chat.
+            First run downloads ~4 GB (chat) + ~440 MB (embed) from HuggingFace.
         cmds:
-            - docker compose --profile vllm up vllm -d
+            - docker compose --profile vllm up vllm-chat infinity -d
+
+    vllm:chat:up:
+        desc: Start only the vllm-chat container (Qwen2.5-7B writing assistant)
+        cmds:
+            - docker compose --profile vllm up vllm-chat -d
+
+    vllm:embed:up:
+        desc: Start only the infinity embedding container (bge-base-en-v1.5)
+        cmds:
+            - docker compose --profile vllm up infinity -d
 
     vllm:down:
-        desc: Stop the vLLM container
+        desc: Stop both AI containers (vllm-chat + infinity)
         cmds:
-            - docker compose --profile vllm stop vllm
+            - docker compose --profile vllm stop vllm-chat infinity
 
     vllm:logs:
-        desc: Follow vLLM container logs
+        desc: Follow logs for both AI containers
         cmds:
-            - docker compose --profile vllm logs -f vllm
+            - docker compose --profile vllm logs -f vllm-chat infinity
 
-    # Start everything including vLLM in one command
+    vllm:logs:chat:
+        desc: Follow vllm-chat container logs
+        cmds:
+            - docker compose --profile vllm logs -f vllm-chat
+
+    vllm:logs:embed:
+        desc: Follow infinity container logs
+        cmds:
+            - docker compose --profile vllm logs -f infinity
+
+    vllm:status:
+        desc: Show health and status of the AI containers
+        cmds:
+            - docker compose --profile vllm ps vllm-chat infinity
+
+    # Start everything including both AI containers in one command
     dev:full:
-        desc: Start the full dev stack including the vLLM container
+        desc: Start the full dev stack including vllm-chat and infinity
         cmds:
             - docker compose --profile vllm up --build
 
@@ -171,10 +209,13 @@ tasks:
             - docker exec -it portfolio_db psql -U portfolio -d portfolio
 
     db:seed:
-        desc: Seed the database with the initial superuser
-        dir: "{{.BACKEND_DIR}}"
+        desc: >
+            Seed the database with the initial superuser.
+            Runs inside the backend Docker container so DATABASE_URL always
+            resolves to the correct db service hostname. Requires the stack
+            to be running (task dev:d or task dev).
         cmds:
-            - uv run python scripts/seed_admin.py
+            - docker exec portfolio_backend uv run python scripts/seed_admin.py
 
     # =============================================================================
     # TESTS
@@ -361,7 +402,7 @@ tasks:
             Runs TypeDoc first to generate frontend Markdown, then MkDocs.
         cmds:
             - task: docs:typedoc
-            - cd {{.DOCS_DIR}} && mkdocs build --strict
+            - cd {{.BACKEND_DIR}} && uv run mkdocs build --config-file ../docs/mkdocs.yml --strict
 
     docs:serve:
         desc: >
@@ -369,7 +410,7 @@ tasks:
             Runs TypeDoc first, then starts the MkDocs dev server on port 8001.
         cmds:
             - task: docs:typedoc
-            - cd {{.DOCS_DIR}} && mkdocs serve --dev-addr localhost:8001
+            - cd {{.BACKEND_DIR}} && uv run mkdocs serve --config-file ../docs/mkdocs.yml --dev-addr localhost:8001
 
     docs:typedoc:
         desc: Generate TypeScript API reference Markdown via TypeDoc
@@ -379,9 +420,8 @@ tasks:
 
     docs:deploy:
         desc: Deploy docs to GitHub Pages via mkdocs gh-deploy
-        dir: "{{.DOCS_DIR}}"
         cmds:
-            - mkdocs gh-deploy --force
+            - cd {{.BACKEND_DIR}} && uv run mkdocs gh-deploy --config-file ../docs/mkdocs.yml --force
 
     # =============================================================================
     # LOGS

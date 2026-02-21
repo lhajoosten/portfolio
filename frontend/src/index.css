@@ -168,6 +168,92 @@
   }
 }
 
+/* ── CARD & INTERACTION UTILITIES ──────────────────────────── */
+@layer components {
+  /**
+   * Base surface card — sets background, border, radius and transition.
+   * Apply to any card container that needs the standard lift-on-hover effect.
+   * Do NOT set border-color inline on elements using .card — let CSS own it.
+   */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-lg);
+    transition:
+      border-color 0.2s ease,
+      transform 0.2s ease;
+    cursor: pointer;
+  }
+
+  .card:hover {
+    border-color: var(--border2);
+    transform: translateY(-2px);
+  }
+
+  /**
+   * Featured card variant — lime accent border that brightens on hover.
+   */
+  .card--featured {
+    border-color: rgba(200, 255, 71, 0.18);
+  }
+
+  .card--featured:hover {
+    border-color: rgba(200, 255, 71, 0.35);
+    transform: translateY(-2px);
+  }
+
+  /**
+   * Muted link — starts muted, transitions to full text colour on hover.
+   * Use on nav links, back links, breadcrumbs etc.
+   */
+  .link-muted {
+    color: var(--muted);
+    text-decoration: none;
+    transition: color 0.2s ease;
+  }
+
+  .link-muted:hover {
+    color: var(--text);
+  }
+
+  /**
+   * Accent link — used on inline "Verify ↗", "View project →" CTAs.
+   */
+  .link-accent {
+    color: var(--accent);
+    text-decoration: none;
+    transition: opacity 0.15s ease;
+  }
+
+  .link-accent:hover {
+    opacity: 0.7;
+  }
+
+  /**
+   * CTA button — solid accent background (Hire Me, nav CTA).
+   */
+  .btn-cta {
+    display: inline-block;
+    font-family: var(--font-mono);
+    font-size: 12px;
+    letter-spacing: 0.08em;
+    padding: 8px 18px;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-weight: 500;
+    text-transform: uppercase;
+    text-decoration: none;
+    transition: opacity 0.2s ease;
+  }
+
+  .btn-cta:hover {
+    opacity: 0.85;
+  }
+}
+
 /* ── PROSE OVERRIDES (blog body) ────────────────────────────── */
 @layer components {
   .prose-portfolio {
@@ -228,5 +314,152 @@
     padding-left: 20px;
     color: var(--muted);
     font-style: italic;
+  }
+}
+
+/* ── TIPTAP EDITOR ──────────────────────────────────────────── */
+@layer components {
+  /**
+   * Root wrapper — removes the default ProseMirror outline and lets the
+   * editor fill its container naturally.
+   */
+  .tiptap-editor-root {
+    flex: 1;
+    min-height: 320px;
+  }
+
+  /**
+   * The editable ProseMirror node itself.
+   * All typography inside the editor matches the portfolio prose style so
+   * what you see in the CMS is close to what renders on the public site.
+   */
+  .tiptap-editor-body {
+    outline: none;
+    min-height: 320px;
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.75;
+    color: var(--text);
+    caret-color: var(--accent);
+  }
+
+  /* Placeholder */
+  .tiptap-editor-body p.is-editor-empty:first-child::before {
+    content: attr(data-placeholder);
+    color: var(--muted);
+    pointer-events: none;
+    height: 0;
+    float: left;
+    opacity: 0.5;
+  }
+
+  /* Headings */
+  .tiptap-editor-body h1 {
+    font-family: var(--font-display);
+    font-size: 32px;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+    color: var(--text);
+    margin: 28px 0 12px;
+  }
+
+  .tiptap-editor-body h2 {
+    font-family: var(--font-display);
+    font-size: 24px;
+    letter-spacing: -0.01em;
+    line-height: 1.2;
+    color: var(--text);
+    margin: 24px 0 10px;
+  }
+
+  .tiptap-editor-body h3 {
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--text);
+    margin: 20px 0 8px;
+  }
+
+  /* Paragraph */
+  .tiptap-editor-body p {
+    margin: 0 0 14px;
+    color: var(--muted);
+  }
+
+  /* Links */
+  .tiptap-editor-body a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+
+  /* Inline code */
+  .tiptap-editor-body code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    background: rgba(200, 255, 71, 0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  /* Code block */
+  .tiptap-editor-body pre {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 18px 22px;
+    overflow-x: auto;
+    margin: 16px 0;
+  }
+
+  .tiptap-editor-body pre code {
+    background: transparent;
+    color: var(--text);
+    padding: 0;
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  /* Blockquote */
+  .tiptap-editor-body blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    color: var(--muted);
+    font-style: italic;
+    margin: 16px 0;
+  }
+
+  /* Lists */
+  .tiptap-editor-body ul,
+  .tiptap-editor-body ol {
+    padding-left: 24px;
+    margin: 0 0 14px;
+    color: var(--muted);
+  }
+
+  .tiptap-editor-body li {
+    margin-bottom: 4px;
+  }
+
+  .tiptap-editor-body li p {
+    margin: 0;
+  }
+
+  /* Horizontal rule */
+  .tiptap-editor-body hr {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 24px 0;
+  }
+
+  /* Selection */
+  .tiptap-editor-body ::selection {
+    background: rgba(200, 255, 71, 0.18);
+  }
+
+  /* Focused editor subtle glow */
+  .tiptap-editor-body:focus {
+    outline: none;
   }
 }

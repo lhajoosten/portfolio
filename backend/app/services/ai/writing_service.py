@@ -70,7 +70,7 @@ class WritingService:
 
         try:
             stream = await self.client.chat.completions.create(
-                model=settings.active_model,
+                model=settings.VLLM_CHAT_MODEL,
                 messages=messages,
                 max_tokens=WRITING_MAX_TOKENS,
                 stream=True,

@@ -21,7 +21,7 @@ def _request_id(request: Request) -> str:
 
 def register_middlewares(app: FastAPI) -> None:
     """Register all custom middleware. Order matters — outermost is registered last."""
-    app.add_middleware(RequestIDMiddleware)  # type: ignore[arg-type]
+    app.add_middleware(RequestIDMiddleware)
 
 
 def register_exception_handlers(app: FastAPI) -> None:

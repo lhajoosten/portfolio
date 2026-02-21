@@ -12,11 +12,19 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as CertificationsRouteImport } from './routes/certifications'
 import { Route as AboutRouteImport } from './routes/about'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ProjectsIndexRouteImport } from './routes/projects/index'
 import { Route as BlogIndexRouteImport } from './routes/blog/index'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as ProjectsSlugRouteImport } from './routes/projects/$slug'
 import { Route as BlogSlugRouteImport } from './routes/blog/$slug'
+import { Route as AdminProjectsIndexRouteImport } from './routes/admin/projects/index'
+import { Route as AdminPostsIndexRouteImport } from './routes/admin/posts/index'
+import { Route as AdminCertificationsIndexRouteImport } from './routes/admin/certifications/index'
+import { Route as AdminProjectsProjectSlugRouteImport } from './routes/admin/projects/$projectSlug'
+import { Route as AdminPostsPostSlugRouteImport } from './routes/admin/posts/$postSlug'
+import { Route as AdminCertificationsCertIdRouteImport } from './routes/admin/certifications/$certId'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -31,6 +39,11 @@ const CertificationsRoute = CertificationsRouteImport.update({
 const AboutRoute = AboutRouteImport.update({
   id: '/about',
   path: '/about',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -48,6 +61,11 @@ const BlogIndexRoute = BlogIndexRouteImport.update({
   path: '/blog/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const ProjectsSlugRoute = ProjectsSlugRouteImport.update({
   id: '/projects/$slug',
   path: '/projects/$slug',
@@ -60,16 +78,57 @@ const BlogSlugRoute = BlogSlugRouteImport.update({
   path: '/blog/$slug',
   getParentRoute: () => rootRouteImport,
 } as any).lazy(() => import('./routes/blog/$slug.lazy').then((d) => d.Route))
+const AdminProjectsIndexRoute = AdminProjectsIndexRouteImport.update({
+  id: '/projects/',
+  path: '/projects/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminPostsIndexRoute = AdminPostsIndexRouteImport.update({
+  id: '/posts/',
+  path: '/posts/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCertificationsIndexRoute =
+  AdminCertificationsIndexRouteImport.update({
+    id: '/certifications/',
+    path: '/certifications/',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
+const AdminProjectsProjectSlugRoute =
+  AdminProjectsProjectSlugRouteImport.update({
+    id: '/projects/$projectSlug',
+    path: '/projects/$projectSlug',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
+const AdminPostsPostSlugRoute = AdminPostsPostSlugRouteImport.update({
+  id: '/posts/$postSlug',
+  path: '/posts/$postSlug',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
+const AdminCertificationsCertIdRoute =
+  AdminCertificationsCertIdRouteImport.update({
+    id: '/certifications/$certId',
+    path: '/certifications/$certId',
+    getParentRoute: () => AdminRouteRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/certifications': typeof CertificationsRoute
   '/login': typeof LoginRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/admin/certifications/$certId': typeof AdminCertificationsCertIdRoute
+  '/admin/posts/$postSlug': typeof AdminPostsPostSlugRoute
+  '/admin/projects/$projectSlug': typeof AdminProjectsProjectSlugRoute
+  '/admin/certifications/': typeof AdminCertificationsIndexRoute
+  '/admin/posts/': typeof AdminPostsIndexRoute
+  '/admin/projects/': typeof AdminProjectsIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,31 +137,54 @@ export interface FileRoutesByTo {
   '/login': typeof LoginRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/admin': typeof AdminIndexRoute
   '/blog': typeof BlogIndexRoute
   '/projects': typeof ProjectsIndexRoute
+  '/admin/certifications/$certId': typeof AdminCertificationsCertIdRoute
+  '/admin/posts/$postSlug': typeof AdminPostsPostSlugRoute
+  '/admin/projects/$projectSlug': typeof AdminProjectsProjectSlugRoute
+  '/admin/certifications': typeof AdminCertificationsIndexRoute
+  '/admin/posts': typeof AdminPostsIndexRoute
+  '/admin/projects': typeof AdminProjectsIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/about': typeof AboutRoute
   '/certifications': typeof CertificationsRoute
   '/login': typeof LoginRoute
   '/blog/$slug': typeof BlogSlugRoute
   '/projects/$slug': typeof ProjectsSlugRoute
+  '/admin/': typeof AdminIndexRoute
   '/blog/': typeof BlogIndexRoute
   '/projects/': typeof ProjectsIndexRoute
+  '/admin/certifications/$certId': typeof AdminCertificationsCertIdRoute
+  '/admin/posts/$postSlug': typeof AdminPostsPostSlugRoute
+  '/admin/projects/$projectSlug': typeof AdminProjectsProjectSlugRoute
+  '/admin/certifications/': typeof AdminCertificationsIndexRoute
+  '/admin/posts/': typeof AdminPostsIndexRoute
+  '/admin/projects/': typeof AdminProjectsIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/about'
     | '/certifications'
     | '/login'
     | '/blog/$slug'
     | '/projects/$slug'
+    | '/admin/'
     | '/blog/'
     | '/projects/'
+    | '/admin/certifications/$certId'
+    | '/admin/posts/$postSlug'
+    | '/admin/projects/$projectSlug'
+    | '/admin/certifications/'
+    | '/admin/posts/'
+    | '/admin/projects/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,22 +193,38 @@ export interface FileRouteTypes {
     | '/login'
     | '/blog/$slug'
     | '/projects/$slug'
+    | '/admin'
     | '/blog'
     | '/projects'
+    | '/admin/certifications/$certId'
+    | '/admin/posts/$postSlug'
+    | '/admin/projects/$projectSlug'
+    | '/admin/certifications'
+    | '/admin/posts'
+    | '/admin/projects'
   id:
     | '__root__'
     | '/'
+    | '/admin'
     | '/about'
     | '/certifications'
     | '/login'
     | '/blog/$slug'
     | '/projects/$slug'
+    | '/admin/'
     | '/blog/'
     | '/projects/'
+    | '/admin/certifications/$certId'
+    | '/admin/posts/$postSlug'
+    | '/admin/projects/$projectSlug'
+    | '/admin/certifications/'
+    | '/admin/posts/'
+    | '/admin/projects/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AboutRoute: typeof AboutRoute
   CertificationsRoute: typeof CertificationsRoute
   LoginRoute: typeof LoginRoute
@@ -159,6 +257,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AboutRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/': {
       id: '/'
       path: '/'
@@ -180,6 +285,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogIndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/projects/$slug': {
       id: '/projects/$slug'
       path: '/projects/$slug'
@@ -194,11 +306,78 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BlogSlugRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin/projects/': {
+      id: '/admin/projects/'
+      path: '/projects'
+      fullPath: '/admin/projects/'
+      preLoaderRoute: typeof AdminProjectsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/posts/': {
+      id: '/admin/posts/'
+      path: '/posts'
+      fullPath: '/admin/posts/'
+      preLoaderRoute: typeof AdminPostsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/certifications/': {
+      id: '/admin/certifications/'
+      path: '/certifications'
+      fullPath: '/admin/certifications/'
+      preLoaderRoute: typeof AdminCertificationsIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/projects/$projectSlug': {
+      id: '/admin/projects/$projectSlug'
+      path: '/projects/$projectSlug'
+      fullPath: '/admin/projects/$projectSlug'
+      preLoaderRoute: typeof AdminProjectsProjectSlugRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/posts/$postSlug': {
+      id: '/admin/posts/$postSlug'
+      path: '/posts/$postSlug'
+      fullPath: '/admin/posts/$postSlug'
+      preLoaderRoute: typeof AdminPostsPostSlugRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
+    '/admin/certifications/$certId': {
+      id: '/admin/certifications/$certId'
+      path: '/certifications/$certId'
+      fullPath: '/admin/certifications/$certId'
+      preLoaderRoute: typeof AdminCertificationsCertIdRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
   }
 }
 
+interface AdminRouteRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminCertificationsCertIdRoute: typeof AdminCertificationsCertIdRoute
+  AdminPostsPostSlugRoute: typeof AdminPostsPostSlugRoute
+  AdminProjectsProjectSlugRoute: typeof AdminProjectsProjectSlugRoute
+  AdminCertificationsIndexRoute: typeof AdminCertificationsIndexRoute
+  AdminPostsIndexRoute: typeof AdminPostsIndexRoute
+  AdminProjectsIndexRoute: typeof AdminProjectsIndexRoute
+}
+
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+  AdminCertificationsCertIdRoute: AdminCertificationsCertIdRoute,
+  AdminPostsPostSlugRoute: AdminPostsPostSlugRoute,
+  AdminProjectsProjectSlugRoute: AdminProjectsProjectSlugRoute,
+  AdminCertificationsIndexRoute: AdminCertificationsIndexRoute,
+  AdminPostsIndexRoute: AdminPostsIndexRoute,
+  AdminProjectsIndexRoute: AdminProjectsIndexRoute,
+}
+
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   AboutRoute: AboutRoute,
   CertificationsRoute: CertificationsRoute,
   LoginRoute: LoginRoute,

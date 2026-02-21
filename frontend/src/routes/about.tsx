@@ -1,56 +1,57 @@
 import { createFileRoute } from "@tanstack/react-router";
 
+import { PageContainer, PageHeader, SidebarCard, TagPill } from "@/components/ui";
+import type { TagVariant } from "@/lib/tags";
+
 export const Route = createFileRoute("/about")({
   component: AboutPage,
 });
 
+// ---------------------------------------------------------------------------
+// Static data
+// ---------------------------------------------------------------------------
+
+const STACK_CHIPS: Array<{ label: string; variant: TagVariant }> = [
+  { label: "Python 3.12", variant: "lime" },
+  { label: "FastAPI", variant: "lime" },
+  { label: "React 19", variant: "blue" },
+  { label: "TypeScript", variant: "blue" },
+  { label: "PostgreSQL", variant: "gray" },
+  { label: "pgvector", variant: "gray" },
+  { label: "OpenAI", variant: "gray" },
+  { label: "Docker", variant: "gray" },
+];
+
+const SOCIAL_LINKS = [
+  { href: "https://github.com/lhajoosten", label: "GitHub", icon: "📦" },
+  { href: "https://linkedin.com/in/lhajoosten", label: "LinkedIn", icon: "💼" },
+  { href: "mailto:luc@hajoosten.nl", label: "Email", icon: "✉️" },
+] as const;
+
+// ---------------------------------------------------------------------------
+// Page
+// ---------------------------------------------------------------------------
+
 function AboutPage() {
   return (
-    <div
-      style={{
-        maxWidth: "1280px",
-        margin: "0 auto",
-        padding: "64px 48px 120px",
-      }}
-    >
+    <PageContainer>
       {/* Header */}
       <div style={{ marginBottom: "64px" }}>
-        <div
-          style={{
-            fontFamily: "var(--font-mono)",
-            fontSize: "11px",
-            letterSpacing: "0.1em",
-            textTransform: "uppercase",
-            color: "var(--accent)",
-            marginBottom: "12px",
-          }}
-        >
-          Background
-        </div>
-        <h1
-          style={{
-            fontFamily: "var(--font-display)",
-            fontSize: "52px",
-            letterSpacing: "-0.02em",
-            lineHeight: 1.05,
-            marginBottom: "20px",
-          }}
-        >
-          About Me
-        </h1>
+        <PageHeader eyebrow="Background" title="About Me" marginBottom="20px" />
         <p
           style={{
             fontSize: "18px",
             color: "var(--muted)",
             maxWidth: "600px",
             lineHeight: 1.7,
+            margin: 0,
           }}
         >
           Full-stack software engineer specialising in AI-powered product development.
         </p>
       </div>
 
-      {/* Two-column content */}
+      {/* Two-column layout */}
       <div
         style={{
           display: "grid",
@@ -91,71 +92,32 @@ function AboutPage() {
         <div>
           {/* Stack card */}
           <SidebarCard title="Core Stack">
-            {(
-              [
-                { label: "Python 3.12", variant: "lime" },
-                { label: "FastAPI", variant: "lime" },
-                { label: "React 19", variant: "blue" },
-                { label: "TypeScript", variant: "blue" },
-                { label: "PostgreSQL", variant: "gray" },
-                { label: "pgvector", variant: "gray" },
-                { label: "OpenAI", variant: "gray" },
-                { label: "Docker", variant: "gray" },
-              ] as const
-            ).map(({ label, variant }) => (
-              <Chip key={label} label={label} variant={variant} />
+            {STACK_CHIPS.map(({ label, variant }) => (
+              <TagPill key={label} label={label} variant={variant} size="md" />
             ))}
           </SidebarCard>
 
           {/* Links card */}
-          <SidebarCard title="Find Me">
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {(
-                [
-                  {
-                    href: "https://github.com/lhajoosten",
-                    label: "GitHub",
-                    icon: "📦",
-                  },
-                  {
-                    href: "https://linkedin.com/in/lhajoosten",
-                    label: "LinkedIn",
-                    icon: "💼",
-                  },
-                  {
-                    href: "mailto:luc@hajoosten.nl",
-                    label: "Email",
-                    icon: "✉️",
-                  },
-                ] as const
-              ).map(({ href, label, icon }) => (
-                <a
-                  key={label}
-                  href={href}
-                  target={href.startsWith("http") ? "_blank" : undefined}
-                  rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "10px",
-                    fontSize: "14px",
-                    color: "var(--muted)",
-                    textDecoration: "none",
-                    fontWeight: 500,
-                    transition: "color 0.15s",
-                  }}
-                  onMouseEnter={(e) =>
-                    ((e.currentTarget as HTMLAnchorElement).style.color = "var(--text)")
-                  }
-                  onMouseLeave={(e) =>
-                    ((e.currentTarget as HTMLAnchorElement).style.color = "var(--muted)")
-                  }
-                >
-                  <span>{icon}</span>
-                  {label}
-                </a>
-              ))}
-            </div>
+          <SidebarCard title="Find Me" contentStyle={{ flexDirection: "column", gap: "10px" }}>
+            {SOCIAL_LINKS.map(({ href, label, icon }) => (
+              <a
+                key={label}
+                href={href}
+                target={href.startsWith("http") ? "_blank" : undefined}
+                rel={href.startsWith("http") ? "noopener noreferrer" : undefined}
+                className="link-muted"
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "10px",
+                  fontSize: "14px",
+                  fontWeight: 500,
+                }}
+              >
+                <span>{icon}</span>
+                {label}
+              </a>
+            ))}
           </SidebarCard>
 
           {/* Location card */}
@@ -196,85 +158,6 @@ function AboutPage() {
           </div>
         </div>
       </div>
-    </div>
+    </PageContainer>
   );
 }
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-const chipStyles: Record<"lime" | "blue" | "gray", React.CSSProperties> = {
-  lime: {
-    background: "rgba(200,255,71,0.1)",
-    color: "var(--accent)",
-    border: "1px solid rgba(200,255,71,0.2)",
-  },
-  blue: {
-    background: "rgba(61,90,254,0.15)",
-    color: "#818cf8",
-    border: "1px solid rgba(61,90,254,0.25)",
-  },
-  gray: {
-    background: "rgba(255,255,255,0.04)",
-    color: "var(--muted)",
-    border: "1px solid var(--border)",
-  },
-};
-
-function Chip({ label, variant }: { label: string; variant: "lime" | "blue" | "gray" }) {
-  return (
-    <span
-      style={{
-        fontFamily: "var(--font-mono)",
-        fontSize: "11px",
-        padding: "5px 12px",
-        borderRadius: "4px",
-        letterSpacing: "0.04em",
-        ...chipStyles[variant],
-      }}
-    >
-      {label}
-    </span>
-  );
-}
-
-function SidebarCard({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <div
-      style={{
-        background: "var(--surface)",
-        border: "1px solid var(--border)",
-        borderRadius: "var(--r-lg)",
-        overflow: "hidden",
-        marginBottom: "16px",
-      }}
-    >
-      <div
-        style={{
-          fontFamily: "var(--font-mono)",
-          fontSize: "11px",
-          letterSpacing: "0.08em",
-          textTransform: "uppercase",
-          color: "var(--muted)",
-          padding: "16px 20px",
-          borderBottom: "1px solid var(--border)",
-        }}
-      >
-        {title}
-      </div>
-      <div
-        style={{
-          padding: "20px",
-          display: "flex",
-          flexWrap: "wrap",
-          gap: "8px",
-        }}
-      >
-        {children}
-      </div>
-    </div>
-  );
-}
-
-import type React from "react";

@@ -50,5 +50,5 @@ class _RequestIDFilter(logging.Filter):
         self.request_id = request_id
 
     def filter(self, record: logging.LogRecord) -> bool:
-        record.request_id = self.request_id  # type: ignore[attr-defined]
+        record.request_id = self.request_id
         return True

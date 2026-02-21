@@ -1,42 +1,29 @@
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 
+import { ErrorState, LoadingState, PageContainer, PageHeader, TagPill } from "@/components/ui";
 import { useProjects } from "@/hooks/useProjects";
+import { getProjectsApiV1ProjectsGetOptions } from "@/lib/api/@tanstack/react-query.gen";
 import type { ProjectResponse } from "@/lib/api/types.gen";
+import { getTagVariant } from "@/lib/tags";
+
+// ---------------------------------------------------------------------------
+// Route — with prefetch loader
+// ---------------------------------------------------------------------------
 
 export const Route = createFileRoute("/projects/")({
+  loader: ({ context: { queryClient } }) =>
+    queryClient.prefetchQuery(
+      getProjectsApiV1ProjectsGetOptions({ query: { published_only: true } }),
+    ),
   component: ProjectsPage,
 });
 
 // ---------------------------------------------------------------------------
-// Helpers
+// Constants
 // ---------------------------------------------------------------------------
 
 const ALL_FILTER = "All";
-
-function getTagVariant(tag: string): "lime" | "blue" | "red" {
-  const lower = tag.toLowerCase();
-  if (["ai", "llm", "rag", "openai", "langchain", "langgraph", "mcp"].includes(lower))
-    return "lime";
-  if (["fastapi", "python", "react", "typescript", "postgres", "pgvector"].includes(lower))
-    return "blue";
-  return "red";
-}
-
-const tagStyles: Record<"lime" | "blue" | "red", React.CSSProperties> = {
-  lime: {
-    background: "rgba(200,255,71,0.1)",
-    color: "var(--accent)",
-  },
-  blue: {
-    background: "rgba(61,90,254,0.15)",
-    color: "#818cf8",
-  },
-  red: {
-    background: "rgba(255,77,77,0.1)",
-    color: "#ff8080",
-  },
-};
 
 // ---------------------------------------------------------------------------
 // Page
@@ -45,6 +32,22 @@ const tagStyles: Record<"lime" | "blue" | "red", React.CSSProperties> = {
 function ProjectsPage() {
   const { data: projects = [], isLoading, error } = useProjects();
   const [activeFilter, setActiveFilter] = useState<string>(ALL_FILTER);
+
+  if (isLoading) {
+    return (
+      <PageContainer style={{ paddingBottom: "64px" }}>
+        <LoadingState message="Loading projects…" />
+      </PageContainer>
+    );
+  }
+
+  if (error) {
+    return (
+      <PageContainer style={{ paddingBottom: "64px" }}>
+        <ErrorState message="Failed to load projects." />
+      </PageContainer>
+    );
+  }
 
   // Collect unique tags for filter pills
   const allTags = [
@@ -57,93 +60,16 @@ function ProjectsPage() {
       ? projects
       : projects.filter((p) => (p.tags ?? []).includes(activeFilter));
 
-  if (isLoading) {
-    return (
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 48px",
-        }}
-      >
-        <p style={{ color: "var(--muted)" }}>Loading projects…</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div
-        style={{
-          maxWidth: "1280px",
-          margin: "0 auto",
-          padding: "64px 48px",
-        }}
-      >
-        <p style={{ color: "var(--danger)" }}>Failed to load projects.</p>
-      </div>
-    );
-  }
-
-  const [featured, regular] = (() => {
-    const f = filtered.filter((p) => p.featured);
-    const r = filtered.filter((p) => !p.featured);
-    return [f, r];
-  })();
+  const featured = filtered.filter((p) => p.featured);
+  const regular = filtered.filter((p) => !p.featured);
 
   return (
-    <div
-      style={{
-        maxWidth: "1280px",
-        margin: "0 auto",
-        padding: "64px 48px 120px",
-      }}
-    >
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "flex-end",
-          justifyContent: "space-between",
-          marginBottom: "56px",
-        }}
-      >
-        <div>
-          <div
-            style={{
-              fontFamily: "var(--font-mono)",
-              fontSize: "11px",
-              letterSpacing: "0.1em",
-              textTransform: "uppercase",
-              color: "var(--accent)",
-              marginBottom: "12px",
-            }}
-          >
-            Work
-          </div>
-          <h1
-            style={{
-              fontFamily: "var(--font-display)",
-              fontSize: "52px",
-              letterSpacing: "-0.02em",
-              lineHeight: 1.05,
-            }}
-          >
-            Projects
-          </h1>
-        </div>
-        <p
-          style={{
-            maxWidth: "320px",
-            color: "var(--muted)",
-            fontSize: "15px",
-            lineHeight: 1.7,
-          }}
-        >
-          Production systems, research experiments, and open-source tools at the intersection of AI
-          and finance.
-        </p>
-      </div>
+    <PageContainer>
+      <PageHeader
+        eyebrow="Work"
+        title="Projects"
+        description="Production systems, research experiments, and open-source tools at the intersection of AI and finance."
+      />
 
       {/* Filter pills */}
       {allTags.length > 1 && (
@@ -174,18 +100,6 @@ function ProjectsPage() {
                   letterSpacing: "0.04em",
                   transition: "all 0.15s",
                 }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--text)";
-                    (e.currentTarget as HTMLButtonElement).style.color = "var(--text)";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    (e.currentTarget as HTMLButtonElement).style.borderColor = "var(--border2)";
-                    (e.currentTarget as HTMLButtonElement).style.color = "var(--muted)";
-                  }
-                }}
               >
                 {tag}
               </button>
@@ -215,22 +129,19 @@ function ProjectsPage() {
           gap: "24px",
         }}
       >
-        {/* Featured cards (span 2) */}
         {featured.map((project) => (
           <FeaturedCard key={project.id} project={project} />
         ))}
-
-        {/* Regular cards */}
         {regular.map((project) => (
           <RegularCard key={project.id} project={project} />
         ))}
       </div>
-    </div>
+    </PageContainer>
   );
 }
 
 // ---------------------------------------------------------------------------
-// Featured Card
+// Featured Card (spans 2 columns)
 // ---------------------------------------------------------------------------
 
 function FeaturedCard({ project }: { project: ProjectResponse }) {
@@ -241,23 +152,11 @@ function FeaturedCard({ project }: { project: ProjectResponse }) {
       style={{ textDecoration: "none", gridColumn: "span 2" }}
     >
       <div
+        className="card"
         style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--r-lg)",
           overflow: "hidden",
           display: "grid",
           gridTemplateColumns: "1fr 280px",
-          transition: "border-color 0.2s, transform 0.2s",
-          cursor: "pointer",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border2)";
-          (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)";
-          (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
         }}
       >
         {/* Thumb */}
@@ -298,19 +197,15 @@ function FeaturedCard({ project }: { project: ProjectResponse }) {
           }}
         >
           <div>
-            <div
-              style={{
-                display: "flex",
-                gap: "6px",
-                marginBottom: "12px",
-                flexWrap: "wrap",
-              }}
-            >
+            {/* Tags */}
+            <div style={{ display: "flex", gap: "6px", marginBottom: "12px", flexWrap: "wrap" }}>
               <TagPill label="Featured" variant="lime" />
               {(project.tags ?? []).slice(0, 2).map((tag) => (
                 <TagPill key={tag} label={tag} variant={getTagVariant(tag)} />
               ))}
             </div>
+
+            {/* Title */}
             <div
               style={{
                 fontFamily: "var(--font-display)",
@@ -322,6 +217,8 @@ function FeaturedCard({ project }: { project: ProjectResponse }) {
             >
               {project.title}
             </div>
+
+            {/* Description */}
             <p
               style={{
                 fontSize: "14px",
@@ -332,35 +229,17 @@ function FeaturedCard({ project }: { project: ProjectResponse }) {
             >
               {project.description}
             </p>
+
+            {/* Tech stack */}
             {(project.tech_stack ?? []).length > 0 && (
-              <div
-                style={{
-                  display: "flex",
-                  flexWrap: "wrap",
-                  gap: "6px",
-                  marginBottom: "20px",
-                }}
-              >
+              <div style={{ display: "flex", flexWrap: "wrap", gap: "6px", marginBottom: "20px" }}>
                 {(project.tech_stack ?? []).slice(0, 4).map((tech) => (
-                  <span
-                    key={tech}
-                    style={{
-                      fontFamily: "var(--font-mono)",
-                      fontSize: "10px",
-                      padding: "3px 8px",
-                      borderRadius: "4px",
-                      background: "rgba(255,255,255,0.04)",
-                      color: "var(--muted)",
-                      border: "1px solid var(--border)",
-                      letterSpacing: "0.04em",
-                    }}
-                  >
-                    {tech}
-                  </span>
+                  <TagPill key={tech} label={tech} variant={getTagVariant(tech)} />
                 ))}
               </div>
             )}
           </div>
+
           <ProjectFooter project={project} />
         </div>
       </div>
@@ -369,31 +248,19 @@ function FeaturedCard({ project }: { project: ProjectResponse }) {
 }
 
 // ---------------------------------------------------------------------------
-// Regular Card
+// Regular Card (1 column)
 // ---------------------------------------------------------------------------
 
 function RegularCard({ project }: { project: ProjectResponse }) {
   return (
     <Link to="/projects/$slug" params={{ slug: project.slug }} style={{ textDecoration: "none" }}>
       <div
+        className="card"
         style={{
-          background: "var(--surface)",
-          border: "1px solid var(--border)",
-          borderRadius: "var(--r-lg)",
           overflow: "hidden",
-          transition: "border-color 0.2s, transform 0.2s",
-          cursor: "pointer",
           height: "100%",
           display: "flex",
           flexDirection: "column",
-        }}
-        onMouseEnter={(e) => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border2)";
-          (e.currentTarget as HTMLDivElement).style.transform = "translateY(-2px)";
-        }}
-        onMouseLeave={(e) => {
-          (e.currentTarget as HTMLDivElement).style.borderColor = "var(--border)";
-          (e.currentTarget as HTMLDivElement).style.transform = "translateY(0)";
         }}
       >
         {/* Thumb */}
@@ -433,19 +300,14 @@ function RegularCard({ project }: { project: ProjectResponse }) {
             flex: 1,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              gap: "6px",
-              marginBottom: "12px",
-              flexWrap: "wrap",
-            }}
-          >
+          {/* Tags */}
+          <div style={{ display: "flex", gap: "6px", marginBottom: "12px", flexWrap: "wrap" }}>
             {(project.tags ?? []).slice(0, 3).map((tag) => (
               <TagPill key={tag} label={tag} variant={getTagVariant(tag)} />
             ))}
           </div>
 
+          {/* Title */}
           <div
             style={{
               fontFamily: "var(--font-display)",
@@ -457,6 +319,8 @@ function RegularCard({ project }: { project: ProjectResponse }) {
           >
             {project.title}
           </div>
+
+          {/* Description */}
           <p
             style={{
               fontSize: "14px",
@@ -468,6 +332,7 @@ function RegularCard({ project }: { project: ProjectResponse }) {
           >
             {project.description}
           </p>
+
           <ProjectFooter project={project} />
         </div>
       </div>
@@ -478,24 +343,6 @@ function RegularCard({ project }: { project: ProjectResponse }) {
 // ---------------------------------------------------------------------------
 // Shared sub-components
 // ---------------------------------------------------------------------------
-
-function TagPill({ label, variant }: { label: string; variant: "lime" | "blue" | "red" }) {
-  return (
-    <span
-      style={{
-        fontFamily: "var(--font-mono)",
-        fontSize: "10px",
-        padding: "3px 8px",
-        borderRadius: "3px",
-        letterSpacing: "0.06em",
-        textTransform: "uppercase",
-        ...tagStyles[variant],
-      }}
-    >
-      {label}
-    </span>
-  );
-}
 
 function ProjectFooter({ project }: { project: ProjectResponse }) {
   return (
@@ -517,17 +364,9 @@ function ProjectFooter({ project }: { project: ProjectResponse }) {
       >
         {new Date(project.created_at).getFullYear()}
       </span>
-      <span
-        style={{
-          fontSize: "13px",
-          color: "var(--accent)",
-          fontWeight: 600,
-        }}
-      >
+      <span className="link-accent" style={{ fontSize: "13px", fontWeight: 600 }}>
         View project →
       </span>
     </div>
   );
 }
-
-import type React from "react";

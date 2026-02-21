@@ -5,110 +5,94 @@ across the backend.  Import from here; never inline literals elsewhere.
 
 Groups:
 
-- **AI / OpenAI** — model names, token budgets, embedding config
-- **vLLM** — the default open-source model served via ``vllm/vllm-openai``
+- **AI / vLLM chat** — served model name for the writing assistant
+- **AI / vLLM embeddings** — model name and vector dimensions for RAG
+- **AI generation budgets** — token limits
 - **Auth** — JWT expiry window
 
 Example::
 
-    from app.core.constants import OPENAI_CHAT_MODEL, EMBEDDING_DIMENSIONS
+    from app.core.constants import VLLM_CHAT_MODEL, EMBEDDING_DIMENSIONS
 """
 
 # ---------------------------------------------------------------------------
-# OpenAI / compatible provider — chat
+# vLLM — chat / writing assistant
 # ---------------------------------------------------------------------------
 
-OPENAI_CHAT_MODEL: str = "gpt-4o"
-"""Default OpenAI chat-completion model.
+VLLM_CHAT_MODEL: str = "qwen2.5-7b"
+"""Served model name for the vLLM chat container.
 
-Used when ``settings.VLLM_ENABLED`` is ``False`` (the default).
-Override at runtime via the ``OPENAI_MODEL`` environment variable.
+This is the value passed as ``--served-model-name`` to the vLLM process and
+the value used as ``model=`` in every ``chat.completions.create`` call.
+The actual HuggingFace repository path (``Qwen/Qwen2.5-7B-Instruct-AWQ``)
+never appears in application code — only in ``docker-compose.yml``.
+
+**Why Qwen2.5-7B-Instruct-AWQ?**
+
+The portfolio writing assistant does not need a 14 B parameter model.
+7 B AWQ hits the right balance for this use case:
+
++----------------------------------+-------+-----------+-------------------+
+| Model / precision                | Params| VRAM      | Notes             |
++==================================+=======+===========+===================+
+| Qwen2.5-7B-Instruct (FP16)       |  7 B  | ~14 GB    | Leaves no KV room |
++----------------------------------+-------+-----------+-------------------+
+| **Qwen2.5-7B-Instruct-AWQ**      |**7 B**| **~4 GB** | **← used here**   |
++----------------------------------+-------+-----------+-------------------+
+| Qwen2.5-14B-Instruct-AWQ         | 14 B  |  ~7.5 GB  | Overkill for CMS  |
++----------------------------------+-------+-----------+-------------------+
+
+Override at runtime via the ``VLLM_CHAT_MODEL`` environment variable.
 """
 
-VLLM_CHAT_MODEL: str = "qwen2.5-14b"
-"""Served model name for the vLLM container (RTX 4080 / 16 GB VRAM profile).
+VLLM_CHAT_MODEL_HF_ID: str = "Qwen/Qwen2.5-7B-Instruct-AWQ"
+"""HuggingFace repository path passed as ``--model`` to the vLLM chat container.
 
-This value is passed as the ``model`` parameter in every
-``chat.completions.create`` call when ``settings.VLLM_ENABLED`` is ``True``.
-It must match the ``--served-model-name`` flag passed to the vLLM process so
-that the OpenAI-compatible API accepts it.
-
-**Recommended model: Qwen/Qwen2.5-14B-Instruct-AWQ**
-
-Chosen for the RTX 4080 (16 GB VRAM) because it hits the sweet spot between
-quality and VRAM headroom — a 20 B model leaves almost no room for KV cache,
-while a 7 B model is noticeably weaker for writing/instruction tasks.
-
-**VRAM budget (RTX 4080 — 16 GB, Qwen2.5 family):**
-
-+--------------------------------+--------+----------+-----------------+
-| Model / precision              | Params | Weights  | KV cache left   |
-+================================+========+==========+=================+
-| Qwen2.5-7B-Instruct (FP16)     |  7 B   |  ~14 GB  | ~2 GB  ✗ tight  |
-+--------------------------------+--------+----------+-----------------+
-| Qwen2.5-7B-Instruct-AWQ        |  7 B   |  ~4 GB   | ~12 GB ✓ fast   |
-+--------------------------------+--------+----------+-----------------+
-| **Qwen2.5-14B-Instruct-AWQ**   | **14B**| **~7.5GB**| **~8.5GB ✓**  |
-+--------------------------------+--------+----------+-----------------+
-| Qwen2.5-20B-Instruct-AWQ       | 20 B   | ~10 GB   | ~6 GB  ✓ tight  |
-+--------------------------------+--------+----------+-----------------+
-| Qwen2.5-20B-Instruct (FP16)    | 20 B   | ~40 GB   | —      ✗        |
-+--------------------------------+--------+----------+-----------------+
-
-Set the HuggingFace repo path in ``.env`` (root) and ``backend/.env``::
-
-    # root .env  (Docker Compose variable substitution)
-    VLLM_MODEL_HF_ID=Qwen/Qwen2.5-14B-Instruct-AWQ
-    VLLM_MODEL=qwen2.5-14b
-
-    # backend/.env  (pydantic-settings / application config)
-    VLLM_ENABLED=true
-    VLLM_MODEL=qwen2.5-14b
-
-The vLLM container is started with ``--quantization awq`` and
-``--served-model-name qwen2.5-14b`` so the backend always calls
-``model="qwen2.5-14b"`` regardless of the underlying HF repo path.
-
-Override at runtime via the ``VLLM_MODEL`` environment variable.
+Used only in ``docker-compose.yml`` (via the ``VLLM_CHAT_MODEL_HF_ID``
+environment variable) so the HF path never leaks into application code.
+Listed here as the canonical reference value.
 """
 
 # ---------------------------------------------------------------------------
-# OpenAI / compatible provider — embeddings
+# infinity-emb — embedding model for RAG
 # ---------------------------------------------------------------------------
 
-OPENAI_EMBEDDING_MODEL: str = "text-embedding-3-small"
-"""Embedding model used to generate ``content_embedding`` vectors.
+VLLM_EMBED_MODEL: str = "BAAI/bge-base-en-v1.5"
+"""Model name served by the infinity-emb container.
 
-``text-embedding-3-small`` produces 1 536-dimension vectors and offers an
-excellent quality-to-cost ratio for RAG retrieval workloads.
+Unlike the vLLM chat container, infinity-emb advertises the HuggingFace
+model name directly as the API model identifier, so this value is both
+the HF repo path **and** the ``model=`` parameter in every
+``embeddings.create`` call.
 
-.. note::
-    **Future: fully-local embeddings**
+**Why BAAI/bge-base-en-v1.5?**
 
-    To remove the OpenAI dependency entirely, switch to a vLLM-served
-    embedding model such as ``BAAI/bge-m3`` (1 024 dims).  This requires:
++--------------------------+------+--------+------------------------------------+
+| Model                    | Dims | Size   | Notes                              |
++==========================+======+========+====================================+
+| bge-small-en-v1.5        |  384 | ~130MB | Fastest; quality good for small    |
++--------------------------+------+--------+------------------------------------+
+| **bge-base-en-v1.5**     |**768**|**~440MB**| **← sweet spot: quality + speed** |
++--------------------------+------+--------+------------------------------------+
+| bge-large-en-v1.5        | 1024 |  ~1.3GB| Diminishing returns for this use   |
++--------------------------+------+--------+------------------------------------+
+| bge-m3                   | 1024 |  ~2.2GB| Multilingual; unnecessary here     |
++--------------------------+------+--------+------------------------------------+
 
-    1. A second ``vllm`` service in ``docker-compose.yml`` dedicated to the
-       embedding model (or use a lighter runtime like ``infinity-emb``).
-    2. An Alembic migration to resize every ``vector(1536)`` column to
-       ``vector(1024)``.
-    3. Re-generating all stored embeddings after the migration.
-    4. Updating ``EMBEDDING_DIMENSIONS`` below to ``1024``.
-
-    Do **not** change ``EMBEDDING_DIMENSIONS`` without the matching migration
-    — pgvector will reject inserts where the vector length does not match the
-    column definition.
+768 dimensions give excellent English semantic search quality with smaller
+pgvector indices than the 1 024-dim alternatives.  The model runs on CPU
+inside Docker, leaving all GPU VRAM for the chat container.
 """
 
-EMBEDDING_DIMENSIONS: int = 1536
+EMBEDDING_DIMENSIONS: int = 768
 """Dimensionality of the embedding vectors stored in pgvector.
 
-Must match the output dimension of ``OPENAI_EMBEDDING_MODEL``.  Changing
-this value requires a new Alembic migration to resize the ``vector`` column.
+Must match the output dimension of ``VLLM_EMBED_MODEL``.  Changing this
+value requires a new Alembic migration to resize every ``vector(N)`` column
+in the ``projects``, ``posts``, and ``certifications`` tables **and**
+re-generating all stored embeddings afterward.
 
-Current value ``1536`` matches ``text-embedding-3-small``.  If you switch to
-a local model (e.g. ``BAAI/bge-m3``), update this to ``1024`` **and** run the
-migration before inserting any new embeddings.
+Current value ``768`` matches ``BAAI/bge-base-en-v1.5``.
 """
 
 # ---------------------------------------------------------------------------
@@ -118,8 +102,8 @@ migration before inserting any new embeddings.
 WRITING_MAX_TOKENS: int = 1000
 """Maximum tokens the writing assistant may generate in a single stream.
 
-Kept intentionally short to stay within rate limits and keep latency low
-for interactive CMS use.
+Kept intentionally short to stay within context and keep latency low for
+interactive CMS use.  Increase if you find content generation cutting off.
 """
 
 RAG_MAX_TOKENS: int = 2000
@@ -128,8 +112,8 @@ RAG_MAX_TOKENS: int = 2000
 RAG_TOP_K: int = 5
 """Number of nearest-neighbour chunks retrieved from pgvector per query.
 
-Higher values improve recall at the cost of larger prompt context and
-slightly slower LLM responses.
+Higher values improve recall at the cost of a larger prompt context window
+and slightly slower LLM responses.
 """
 
 # ---------------------------------------------------------------------------

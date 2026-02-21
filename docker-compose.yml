@@ -9,7 +9,7 @@
 #   task dev           → docker compose up --build  (foreground)
 #   task dev:d         → docker compose up --build -d  (background)
 #   task dev:watch     → docker compose watch  (live file sync)
-#   task vllm:up       → docker compose --profile vllm up vllm -d
+#   task vllm:up       → docker compose --profile vllm up vllm-chat infinity -d
 #   task dev:full      → docker compose --profile vllm up --build
 # ===========================================================================
 
@@ -53,9 +53,6 @@ services:
             - ./backend/.env
         environment:
             DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-portfolio}:${POSTGRES_PASSWORD:-portfolio}@db:5432/${POSTGRES_DB:-portfolio}
-            # Point at vLLM when the vllm profile is active; override in .env
-            # to use the real OpenAI API instead.
-            OPENAI_BASE_URL: ${OPENAI_BASE_URL:-https://api.openai.com/v1}
         ports:
             - "8000:8000"
         volumes:
@@ -124,75 +121,65 @@ services:
                   target: /app/tailwind.config.ts
 
     # =========================================================================
-    # vLLM — OpenAI-compatible OSS inference server  (profile: vllm)
+    # vllm-chat — Writing assistant  (profile: vllm)
+    #
+    # Serves Qwen/Qwen2.5-7B-Instruct-AWQ via the OpenAI-compatible API.
+    # Used by WritingService for SSE-streamed text generation in the CMS.
     #
     # Target hardware: NVIDIA RTX 4080  (16 GB VRAM / Ada Lovelace)
     #
-    # Model: Qwen2.5-14B-Instruct-AWQ  (recommended for RTX 4080 / 16 GB VRAM)
-    # ─────────────────────────────────────────────────────────────────────────
-    # VRAM budget (Qwen2.5 family):
-    #   7B  FP16          → ~14 GB  ✗  almost no KV cache headroom
-    #   7B  AWQ 4-bit     → ~4 GB   ✓  fast but weaker writing quality
-    #   14B AWQ 4-bit     → ~7.5 GB ✓  sweet spot — good quality, ~8.5 GB KV cache  ← used here
-    #   20B AWQ 4-bit     → ~10 GB  ✓  tight — only ~6 GB left for KV cache
+    # VRAM budget:
+    #   Qwen2.5-7B-Instruct-AWQ  →  ~4 GB weights  +  ~10 GB KV cache headroom
     #
-    # AWQ (Activation-aware Weight Quantization) is vLLM's preferred 4-bit
-    # format: minimal accuracy loss, first-class kernel support on Ada (RTX 40xx).
-    # VLLM_MODEL_HF_ID must point at an AWQ-quantized HuggingFace repo.
+    # Why 7B over 14B?
+    #   The portfolio writing assistant does not need a 14B model.
+    #   7B AWQ is fast, uses half the VRAM, and still produces excellent writing.
+    #   The freed VRAM is available for the OS + CUDA context.
     #
-    # Served model name (--served-model-name) is set to "qwen2.5-14b" so the
-    # backend always calls model="qwen2.5-14b" — the actual HF repo path
-    # never leaks into application code.
-    #
-    # Required root .env variables (Docker Compose substitution):
-    #   VLLM_MODEL_HF_ID=Qwen/Qwen2.5-14B-Instruct-AWQ  ← HF repo to download
-    #   VLLM_MODEL=qwen2.5-14b                           ← served name (default below)
-    #   HF_TOKEN=hf_...                                  ← only if model is gated
-    #
-    # Required backend/.env variables (application config):
-    #   VLLM_ENABLED=true
-    #   VLLM_MODEL=qwen2.5-14b
+    # Env vars (root .env):
+    #   VLLM_CHAT_MODEL_HF_ID=Qwen/Qwen2.5-7B-Instruct-AWQ  ← HF repo to download
+    #   VLLM_CHAT_MODEL=qwen2.5-7b                           ← served name
+    #   HF_TOKEN=hf_...                                      ← only if model is gated
     #
     # Activate with:  task vllm:up   or   task dev:full
     # =========================================================================
-    vllm:
+    vllm-chat:
         image: vllm/vllm-openai:latest
-        container_name: portfolio_vllm
+        container_name: portfolio_vllm_chat
         profiles: [vllm]
         restart: unless-stopped
         environment:
             HUGGING_FACE_HUB_TOKEN: ${HF_TOKEN:-}
         command:
             # ── Model ──────────────────────────────────────────────────────
-            # HF repo path — must be an AWQ-quantized variant to fit in 16 GB VRAM
             - "--model"
-            - "${VLLM_MODEL_HF_ID:-Qwen/Qwen2.5-14B-Instruct-AWQ}"
+            - "${VLLM_CHAT_MODEL_HF_ID:-Qwen/Qwen2.5-7B-Instruct-AWQ}"
 
             # Served name: what the OpenAI-compatible API advertises.
-            # The backend calls model="qwen2.5-14b" — keep this in sync with
-            # VLLM_MODEL / constants.VLLM_CHAT_MODEL.
+            # The backend always calls model="qwen2.5-7b" — the HF path
+            # never leaks into application code.
             - "--served-model-name"
-            - "${VLLM_MODEL:-qwen2.5-14b}"
+            - "${VLLM_CHAT_MODEL:-qwen2.5-7b}"
 
             # ── Quantization ───────────────────────────────────────────────
-            # AWQ 4-bit: ~7.5 GB weights for 14B, leaves ~8.5 GB for KV cache
+            # AWQ 4-bit: ~4 GB weights for 7B, leaves ~12 GB for KV cache
             - "--quantization"
             - "awq"
 
-            # FP16 activations + AWQ 4-bit weights is the correct combo for Ada
+            # FP16 activations + AWQ 4-bit weights — correct for Ada (RTX 40xx)
             - "--dtype"
             - "float16"
 
             # ── VRAM / KV cache ────────────────────────────────────────────
-            # Use 90 % of the 16 GB VRAM (~14.4 GB).  The remaining 10 % is
-            # reserved for CUDA context + framework overhead.
+            # 85 % of 16 GB = ~13.6 GB.  7B AWQ only needs ~4 GB for weights;
+            # the rest becomes KV cache.  Leaves ~2.4 GB for CUDA + OS overhead.
             - "--gpu-memory-utilization"
-            - "${VLLM_GPU_MEM_UTIL:-0.90}"
+            - "${VLLM_GPU_MEM_UTIL:-0.85}"
 
-            # Max sequence length.  With AWQ 4-bit + 16 GB, 8192 is safe.
-            # Increase carefully — each extra token costs KV cache memory.
+            # 16 k context window — safe with 7B AWQ + 16 GB VRAM.
+            # The writing assistant rarely needs more than 4–8 k tokens.
             - "--max-model-len"
-            - "${VLLM_MAX_MODEL_LEN:-8192}"
+            - "${VLLM_MAX_MODEL_LEN:-16384}"
 
             # ── Runtime ────────────────────────────────────────────────────
             - "--host"
@@ -204,26 +191,23 @@ services:
             # base tokenizer / modelling code
             - "--trust-remote-code"
 
-            # Disable usage stats sent to vLLM telemetry
-            - "--no-enable-prefix-caching"
-
-            # Flash Attention 2 — supported on Ada (RTX 40xx) + CUDA ≥ 12
+            # Chunked prefill improves throughput for long prompts
             - "--enable-chunked-prefill"
         ports:
-            # Exposed on host as 8001 so it doesn't clash with FastAPI (8000)
+            # Host 8001 → container 8000 (avoids clash with FastAPI on 8000)
             - "8001:8000"
         volumes:
-            # Cache downloaded model weights across container restarts.
-            # First pull of Qwen2.5-14B-Instruct-AWQ is ~7.5 GB — be patient.
-            - vllm_model_cache:/root/.cache/huggingface
-        # Shared memory — required by vLLM for tensor-parallel workers
+            # Cache downloaded weights across restarts.
+            # First pull of Qwen2.5-7B-Instruct-AWQ is ~4 GB.
+            - vllm_chat_cache:/root/.cache/huggingface
+        # Shared memory required by vLLM tensor-parallel workers
         ipc: host
         deploy:
             resources:
                 reservations:
                     devices:
                         - driver: nvidia
-                          count: 1 # single GPU — RTX 4080
+                          count: 1
                           capabilities: [gpu]
         healthcheck:
             test:
@@ -233,6 +217,70 @@ services:
             retries: 5
             # Allow up to 3 min for the model to load into VRAM on first start
             start_period: 180s
+
+    # =========================================================================
+    # infinity — Embedding server  (profile: vllm)
+    #
+    # Serves BAAI/bge-base-en-v1.5 via the OpenAI-compatible /v1/embeddings
+    # endpoint.  Used by RagService to generate and query pgvector embeddings.
+    #
+    # Why infinity-emb instead of a second vLLM instance?
+    #   vLLM is designed for generative models.  infinity-emb is purpose-built
+    #   for embedding models: smaller image, faster startup, lower memory, and
+    #   direct SentenceTransformers compatibility.
+    #
+    # Why bge-base-en-v1.5?
+    #   768-dim vectors — smaller indices than 1024-dim alternatives, excellent
+    #   English semantic search quality, ~440 MB model size, runs fast on CPU.
+    #   The portfolio CMS embeds content on write (low frequency), so CPU is
+    #   entirely sufficient and leaves all VRAM for vllm-chat.
+    #
+    # Model name in API calls: "BAAI/bge-base-en-v1.5"
+    #   infinity-emb uses the HF repo path directly as the model identifier.
+    #
+    # Env vars (root .env):
+    #   INFINITY_EMBED_MODEL=BAAI/bge-base-en-v1.5  (default shown)
+    #
+    # Activate with:  task vllm:up   or   task dev:full
+    # =========================================================================
+    infinity:
+        image: michaelf34/infinity:latest
+        container_name: portfolio_infinity
+        profiles: [vllm]
+        restart: unless-stopped
+        command:
+            - "v2"
+            # HF model to download and serve.  The model name in API requests
+            # must match this value exactly.
+            - "--model-id"
+            - "${INFINITY_EMBED_MODEL:-BAAI/bge-base-en-v1.5}"
+
+            # Run on CPU — the embedding model is tiny (~440 MB) and this
+            # keeps all GPU VRAM free for vllm-chat.
+            - "--device"
+            - "cpu"
+
+            # Use the torch backend (default, most compatible)
+            - "--engine"
+            - "torch"
+
+            - "--port"
+            - "7997"
+        ports:
+            # Host 8002 → container 7997
+            - "8002:7997"
+        volumes:
+            # Cache downloaded model weights across restarts (~440 MB download)
+            - infinity_embed_cache:/app/.cache
+        environment:
+            HF_HOME: /app/.cache
+        healthcheck:
+            test:
+                ["CMD-SHELL", "curl -sf http://localhost:7997/health || exit 1"]
+            interval: 20s
+            timeout: 10s
+            retries: 5
+            start_period: 60s
 
 # =============================================================================
 # Named volumes
@@ -244,5 +292,8 @@ volumes:
     # Python virtual environment — survives source bind-mounts on the backend
     backend_venv:
 
-    # Downloaded Hugging Face model weights — survives vLLM container restarts
-    vllm_model_cache:
+    # Downloaded weights for the vLLM chat model (Qwen2.5-7B-Instruct-AWQ, ~4 GB)
+    vllm_chat_cache:
+
+    # Downloaded weights for the infinity embedding model (bge-base-en-v1.5, ~440 MB)
+    infinity_embed_cache:
