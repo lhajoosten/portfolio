@@ -61,6 +61,8 @@ class Settings(BaseSettings):
             in production with a long random string.
         JWT_ALGORITHM: JWT signing algorithm (default ``"HS256"``).
         JWT_EXPIRE_MINUTES: Token lifetime in minutes.
+        FIRST_SUPERUSER_EMAIL: Email address for the initial superuser account.
+        FIRST_SUPERUSER_PASSWORD: Password for the initial superuser account.
         OPENAI_API_KEY: API key for OpenAI **or** the vLLM container (vLLM
             accepts any non-empty string when ``--api-key`` is not set).
         OPENAI_BASE_URL: Base URL for the OpenAI-compatible API.  Set to
@@ -104,6 +106,8 @@ class Settings(BaseSettings):
     JWT_SECRET: str = "changeme"
     JWT_ALGORITHM: str = "HS256"
     JWT_EXPIRE_MINUTES: int = ACCESS_TOKEN_EXPIRE_MINUTES
+    FIRST_SUPERUSER_EMAIL: str = "admin@example.com"
+    FIRST_SUPERUSER_PASSWORD: str = "admin"
 
     # ---------------------------------------------------------------------------
     # OpenAI-compatible provider (OpenAI API or vLLM)

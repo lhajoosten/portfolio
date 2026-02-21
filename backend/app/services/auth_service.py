@@ -1,3 +1,9 @@
+"""Business logic for authentication and user sessions.
+
+This module provides the :class:`AuthService` which orchestrates user
+login, password verification, and JWT token issuance.
+"""
+
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.exceptions import NotFoundError, PortfolioError
@@ -15,12 +21,26 @@ class InactiveUserError(PortfolioError):
 
 
 class AuthService:
+    """Service layer for authentication operations."""
+
     def __init__(self, repo: UserRepository) -> None:
+        """Initialise the auth service.
+
+        Args:
+            repo: The user repository for database access.
+        """
         self.repo = repo
 
     async def login(self, db: AsyncSession, *, email: str, password: str) -> TokenResponse:
-        """
-        Validate credentials and issue a JWT access token.
+        """Validate credentials and issue a JWT access token.
+
+        Args:
+            db: Active async database session.
+            email: The user's email address.
+            password: The plain-text password to verify.
+
+        Returns:
+            A :class:`~app.schemas.auth.TokenResponse` containing the JWT.
 
         Raises:
             AuthenticationError: If the email is not found or password is wrong.
@@ -38,8 +58,14 @@ class AuthService:
         return TokenResponse(access_token=token)
 
     async def get_current_user(self, db: AsyncSession, *, user_id: str) -> UserResponse:
-        """
-        Resolve a user by ID (extracted from a validated JWT).
+        """Resolve a user by ID (extracted from a validated JWT).
+
+        Args:
+            db: Active async database session.
+            user_id: The UUID string of the user to resolve.
+
+        Returns:
+            The validated :class:`~app.schemas.auth.UserResponse`.
 
         Raises:
             NotFoundError: If the user no longer exists in the database.

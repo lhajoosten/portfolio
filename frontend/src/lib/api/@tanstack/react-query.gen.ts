@@ -3,8 +3,8 @@
 import { type DefaultError, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { aiWriteApiV1AiWritePost, createProjectApiV1ProjectsPost, deleteProjectApiV1ProjectsSlugDelete, getFeaturedProjectsApiV1ProjectsFeaturedGet, getProjectApiV1ProjectsSlugGet, getProjectsApiV1ProjectsGet, healthHealthGet, loginApiV1AuthLoginPost, logoutApiV1AuthLogoutPost, meApiV1AuthMeGet, type Options, updateProjectApiV1ProjectsSlugPatch } from '../sdk.gen';
-import type { AiWriteApiV1AiWritePostData, AiWriteApiV1AiWritePostError, CreateProjectApiV1ProjectsPostData, CreateProjectApiV1ProjectsPostError, CreateProjectApiV1ProjectsPostResponse, DeleteProjectApiV1ProjectsSlugDeleteData, DeleteProjectApiV1ProjectsSlugDeleteError, DeleteProjectApiV1ProjectsSlugDeleteResponse, GetFeaturedProjectsApiV1ProjectsFeaturedGetData, GetFeaturedProjectsApiV1ProjectsFeaturedGetResponse, GetProjectApiV1ProjectsSlugGetData, GetProjectApiV1ProjectsSlugGetError, GetProjectApiV1ProjectsSlugGetResponse, GetProjectsApiV1ProjectsGetData, GetProjectsApiV1ProjectsGetError, GetProjectsApiV1ProjectsGetResponse, HealthHealthGetData, HealthHealthGetResponse, LoginApiV1AuthLoginPostData, LoginApiV1AuthLoginPostError, LoginApiV1AuthLoginPostResponse, LogoutApiV1AuthLogoutPostData, LogoutApiV1AuthLogoutPostError, LogoutApiV1AuthLogoutPostResponse, MeApiV1AuthMeGetData, MeApiV1AuthMeGetError, MeApiV1AuthMeGetResponse, UpdateProjectApiV1ProjectsSlugPatchData, UpdateProjectApiV1ProjectsSlugPatchError, UpdateProjectApiV1ProjectsSlugPatchResponse } from '../types.gen';
+import { aiWriteApiV1AiWritePost, createCertificationApiV1CertificationsPost, createPostApiV1PostsPost, createProjectApiV1ProjectsPost, deleteCertificationApiV1CertificationsCertIdDelete, deletePostApiV1PostsSlugDelete, deleteProjectApiV1ProjectsSlugDelete, getCertificationApiV1CertificationsCertIdGet, getCertificationsApiV1CertificationsGet, getFeaturedProjectsApiV1ProjectsFeaturedGet, getPostApiV1PostsSlugGet, getPostsApiV1PostsGet, getProjectApiV1ProjectsSlugGet, getProjectsApiV1ProjectsGet, healthHealthGet, loginApiV1AuthLoginPost, logoutApiV1AuthLogoutPost, meApiV1AuthMeGet, type Options, updateCertificationApiV1CertificationsCertIdPatch, updatePostApiV1PostsSlugPatch, updateProjectApiV1ProjectsSlugPatch } from '../sdk.gen';
+import type { AiWriteApiV1AiWritePostData, AiWriteApiV1AiWritePostError, CreateCertificationApiV1CertificationsPostData, CreateCertificationApiV1CertificationsPostError, CreateCertificationApiV1CertificationsPostResponse, CreatePostApiV1PostsPostData, CreatePostApiV1PostsPostError, CreatePostApiV1PostsPostResponse, CreateProjectApiV1ProjectsPostData, CreateProjectApiV1ProjectsPostError, CreateProjectApiV1ProjectsPostResponse, DeleteCertificationApiV1CertificationsCertIdDeleteData, DeleteCertificationApiV1CertificationsCertIdDeleteError, DeleteCertificationApiV1CertificationsCertIdDeleteResponse, DeletePostApiV1PostsSlugDeleteData, DeletePostApiV1PostsSlugDeleteError, DeletePostApiV1PostsSlugDeleteResponse, DeleteProjectApiV1ProjectsSlugDeleteData, DeleteProjectApiV1ProjectsSlugDeleteError, DeleteProjectApiV1ProjectsSlugDeleteResponse, GetCertificationApiV1CertificationsCertIdGetData, GetCertificationApiV1CertificationsCertIdGetError, GetCertificationApiV1CertificationsCertIdGetResponse, GetCertificationsApiV1CertificationsGetData, GetCertificationsApiV1CertificationsGetError, GetCertificationsApiV1CertificationsGetResponse, GetFeaturedProjectsApiV1ProjectsFeaturedGetData, GetFeaturedProjectsApiV1ProjectsFeaturedGetResponse, GetPostApiV1PostsSlugGetData, GetPostApiV1PostsSlugGetError, GetPostApiV1PostsSlugGetResponse, GetPostsApiV1PostsGetData, GetPostsApiV1PostsGetError, GetPostsApiV1PostsGetResponse, GetProjectApiV1ProjectsSlugGetData, GetProjectApiV1ProjectsSlugGetError, GetProjectApiV1ProjectsSlugGetResponse, GetProjectsApiV1ProjectsGetData, GetProjectsApiV1ProjectsGetError, GetProjectsApiV1ProjectsGetResponse, HealthHealthGetData, HealthHealthGetResponse, LoginApiV1AuthLoginPostData, LoginApiV1AuthLoginPostError, LoginApiV1AuthLoginPostResponse, LogoutApiV1AuthLogoutPostData, LogoutApiV1AuthLogoutPostError, LogoutApiV1AuthLogoutPostResponse, MeApiV1AuthMeGetData, MeApiV1AuthMeGetError, MeApiV1AuthMeGetResponse, UpdateCertificationApiV1CertificationsCertIdPatchData, UpdateCertificationApiV1CertificationsCertIdPatchError, UpdateCertificationApiV1CertificationsCertIdPatchResponse, UpdatePostApiV1PostsSlugPatchData, UpdatePostApiV1PostsSlugPatchError, UpdatePostApiV1PostsSlugPatchResponse, UpdateProjectApiV1ProjectsSlugPatchData, UpdateProjectApiV1ProjectsSlugPatchError, UpdateProjectApiV1ProjectsSlugPatchResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -43,6 +43,17 @@ export const getProjectsApiV1ProjectsGetQueryKey = (options?: Options<GetProject
 
 /**
  * Get Projects
+ *
+ * Retrieve a list of projects.
+ *
+ * Args:
+ * published_only: If ``True``, returns only published projects.
+ * Defaults to ``True``.
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Returns:
+ * A list of :class:`~app.schemas.project.ProjectResponse` objects.
  */
 export const getProjectsApiV1ProjectsGetOptions = (options?: Options<GetProjectsApiV1ProjectsGetData>) => queryOptions<GetProjectsApiV1ProjectsGetResponse, GetProjectsApiV1ProjectsGetError, GetProjectsApiV1ProjectsGetResponse, ReturnType<typeof getProjectsApiV1ProjectsGetQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -59,6 +70,22 @@ export const getProjectsApiV1ProjectsGetOptions = (options?: Options<GetProjects
 
 /**
  * Create Project
+ *
+ * Create a new project.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * data: The project creation payload.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Returns:
+ * The newly created :class:`~app.schemas.project.ProjectResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 409 if a project with the same slug already exists.
  */
 export const createProjectApiV1ProjectsPostMutation = (options?: Partial<Options<CreateProjectApiV1ProjectsPostData>>): UseMutationOptions<CreateProjectApiV1ProjectsPostResponse, CreateProjectApiV1ProjectsPostError, Options<CreateProjectApiV1ProjectsPostData>> => {
     const mutationOptions: UseMutationOptions<CreateProjectApiV1ProjectsPostResponse, CreateProjectApiV1ProjectsPostError, Options<CreateProjectApiV1ProjectsPostData>> = {
@@ -78,6 +105,15 @@ export const getFeaturedProjectsApiV1ProjectsFeaturedGetQueryKey = (options?: Op
 
 /**
  * Get Featured Projects
+ *
+ * Retrieve a list of featured, published projects.
+ *
+ * Args:
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Returns:
+ * A list of :class:`~app.schemas.project.ProjectResponse` objects.
  */
 export const getFeaturedProjectsApiV1ProjectsFeaturedGetOptions = (options?: Options<GetFeaturedProjectsApiV1ProjectsFeaturedGetData>) => queryOptions<GetFeaturedProjectsApiV1ProjectsFeaturedGetResponse, DefaultError, GetFeaturedProjectsApiV1ProjectsFeaturedGetResponse, ReturnType<typeof getFeaturedProjectsApiV1ProjectsFeaturedGetQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -94,6 +130,19 @@ export const getFeaturedProjectsApiV1ProjectsFeaturedGetOptions = (options?: Opt
 
 /**
  * Delete Project
+ *
+ * Delete a project.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * slug: The unique URL slug of the project to delete.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the project is not found.
  */
 export const deleteProjectApiV1ProjectsSlugDeleteMutation = (options?: Partial<Options<DeleteProjectApiV1ProjectsSlugDeleteData>>): UseMutationOptions<DeleteProjectApiV1ProjectsSlugDeleteResponse, DeleteProjectApiV1ProjectsSlugDeleteError, Options<DeleteProjectApiV1ProjectsSlugDeleteData>> => {
     const mutationOptions: UseMutationOptions<DeleteProjectApiV1ProjectsSlugDeleteResponse, DeleteProjectApiV1ProjectsSlugDeleteError, Options<DeleteProjectApiV1ProjectsSlugDeleteData>> = {
@@ -113,6 +162,19 @@ export const getProjectApiV1ProjectsSlugGetQueryKey = (options: Options<GetProje
 
 /**
  * Get Project
+ *
+ * Retrieve a single project by its slug.
+ *
+ * Args:
+ * slug: The unique URL slug of the project.
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Returns:
+ * The requested :class:`~app.schemas.project.ProjectResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the project is not found.
  */
 export const getProjectApiV1ProjectsSlugGetOptions = (options: Options<GetProjectApiV1ProjectsSlugGetData>) => queryOptions<GetProjectApiV1ProjectsSlugGetResponse, GetProjectApiV1ProjectsSlugGetError, GetProjectApiV1ProjectsSlugGetResponse, ReturnType<typeof getProjectApiV1ProjectsSlugGetQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -129,11 +191,342 @@ export const getProjectApiV1ProjectsSlugGetOptions = (options: Options<GetProjec
 
 /**
  * Update Project
+ *
+ * Update an existing project.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * slug: The unique URL slug of the project to update.
+ * data: The project update payload (partial).
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Returns:
+ * The updated :class:`~app.schemas.project.ProjectResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the project is not found.
+ * HTTPException: HTTP 409 if updating the slug causes a collision.
  */
 export const updateProjectApiV1ProjectsSlugPatchMutation = (options?: Partial<Options<UpdateProjectApiV1ProjectsSlugPatchData>>): UseMutationOptions<UpdateProjectApiV1ProjectsSlugPatchResponse, UpdateProjectApiV1ProjectsSlugPatchError, Options<UpdateProjectApiV1ProjectsSlugPatchData>> => {
     const mutationOptions: UseMutationOptions<UpdateProjectApiV1ProjectsSlugPatchResponse, UpdateProjectApiV1ProjectsSlugPatchError, Options<UpdateProjectApiV1ProjectsSlugPatchData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await updateProjectApiV1ProjectsSlugPatch({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getPostsApiV1PostsGetQueryKey = (options?: Options<GetPostsApiV1PostsGetData>) => createQueryKey('getPostsApiV1PostsGet', options);
+
+/**
+ * Get Posts
+ *
+ * Retrieve a list of blog posts.
+ *
+ * Args:
+ * published_only: If ``True``, returns only published posts.
+ * Defaults to ``True``.
+ * db: Active async database session.
+ * service: Injected post service.
+ *
+ * Returns:
+ * A list of :class:`~app.schemas.post.PostResponse` objects ordered
+ * by ``created_at`` descending (newest first).
+ */
+export const getPostsApiV1PostsGetOptions = (options?: Options<GetPostsApiV1PostsGetData>) => queryOptions<GetPostsApiV1PostsGetResponse, GetPostsApiV1PostsGetError, GetPostsApiV1PostsGetResponse, ReturnType<typeof getPostsApiV1PostsGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getPostsApiV1PostsGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getPostsApiV1PostsGetQueryKey(options)
+});
+
+/**
+ * Create Post
+ *
+ * Create a new blog post.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * data: The post creation payload.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected post service.
+ *
+ * Returns:
+ * The newly created :class:`~app.schemas.post.PostResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 409 if a post with the same slug already exists.
+ */
+export const createPostApiV1PostsPostMutation = (options?: Partial<Options<CreatePostApiV1PostsPostData>>): UseMutationOptions<CreatePostApiV1PostsPostResponse, CreatePostApiV1PostsPostError, Options<CreatePostApiV1PostsPostData>> => {
+    const mutationOptions: UseMutationOptions<CreatePostApiV1PostsPostResponse, CreatePostApiV1PostsPostError, Options<CreatePostApiV1PostsPostData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createPostApiV1PostsPost({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete Post
+ *
+ * Delete a blog post.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * slug: The unique URL slug of the post to delete.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected post service.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the post is not found.
+ */
+export const deletePostApiV1PostsSlugDeleteMutation = (options?: Partial<Options<DeletePostApiV1PostsSlugDeleteData>>): UseMutationOptions<DeletePostApiV1PostsSlugDeleteResponse, DeletePostApiV1PostsSlugDeleteError, Options<DeletePostApiV1PostsSlugDeleteData>> => {
+    const mutationOptions: UseMutationOptions<DeletePostApiV1PostsSlugDeleteResponse, DeletePostApiV1PostsSlugDeleteError, Options<DeletePostApiV1PostsSlugDeleteData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deletePostApiV1PostsSlugDelete({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getPostApiV1PostsSlugGetQueryKey = (options: Options<GetPostApiV1PostsSlugGetData>) => createQueryKey('getPostApiV1PostsSlugGet', options);
+
+/**
+ * Get Post
+ *
+ * Retrieve a single blog post by its slug.
+ *
+ * Args:
+ * slug: The unique URL slug of the post.
+ * db: Active async database session.
+ * service: Injected post service.
+ *
+ * Returns:
+ * The requested :class:`~app.schemas.post.PostResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the post is not found.
+ */
+export const getPostApiV1PostsSlugGetOptions = (options: Options<GetPostApiV1PostsSlugGetData>) => queryOptions<GetPostApiV1PostsSlugGetResponse, GetPostApiV1PostsSlugGetError, GetPostApiV1PostsSlugGetResponse, ReturnType<typeof getPostApiV1PostsSlugGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getPostApiV1PostsSlugGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getPostApiV1PostsSlugGetQueryKey(options)
+});
+
+/**
+ * Update Post
+ *
+ * Update an existing blog post.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * slug: The unique URL slug of the post to update.
+ * data: The post update payload (partial).
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected post service.
+ *
+ * Returns:
+ * The updated :class:`~app.schemas.post.PostResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the post is not found.
+ */
+export const updatePostApiV1PostsSlugPatchMutation = (options?: Partial<Options<UpdatePostApiV1PostsSlugPatchData>>): UseMutationOptions<UpdatePostApiV1PostsSlugPatchResponse, UpdatePostApiV1PostsSlugPatchError, Options<UpdatePostApiV1PostsSlugPatchData>> => {
+    const mutationOptions: UseMutationOptions<UpdatePostApiV1PostsSlugPatchResponse, UpdatePostApiV1PostsSlugPatchError, Options<UpdatePostApiV1PostsSlugPatchData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updatePostApiV1PostsSlugPatch({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getCertificationsApiV1CertificationsGetQueryKey = (options?: Options<GetCertificationsApiV1CertificationsGetData>) => createQueryKey('getCertificationsApiV1CertificationsGet', options);
+
+/**
+ * Get Certifications
+ *
+ * Retrieve a list of certifications.
+ *
+ * Args:
+ * featured_only: If ``True``, returns only featured certifications.
+ * Defaults to ``False`` (return all certifications).
+ * db: Active async database session.
+ * service: Injected certification service.
+ *
+ * Returns:
+ * A list of :class:`~app.schemas.certification.CertificationResponse`
+ * objects ordered by ``issued_at`` descending (most recent first).
+ */
+export const getCertificationsApiV1CertificationsGetOptions = (options?: Options<GetCertificationsApiV1CertificationsGetData>) => queryOptions<GetCertificationsApiV1CertificationsGetResponse, GetCertificationsApiV1CertificationsGetError, GetCertificationsApiV1CertificationsGetResponse, ReturnType<typeof getCertificationsApiV1CertificationsGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getCertificationsApiV1CertificationsGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getCertificationsApiV1CertificationsGetQueryKey(options)
+});
+
+/**
+ * Create Certification
+ *
+ * Create a new certification record.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * data: The certification creation payload.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected certification service.
+ *
+ * Returns:
+ * The newly created :class:`~app.schemas.certification.CertificationResponse`.
+ */
+export const createCertificationApiV1CertificationsPostMutation = (options?: Partial<Options<CreateCertificationApiV1CertificationsPostData>>): UseMutationOptions<CreateCertificationApiV1CertificationsPostResponse, CreateCertificationApiV1CertificationsPostError, Options<CreateCertificationApiV1CertificationsPostData>> => {
+    const mutationOptions: UseMutationOptions<CreateCertificationApiV1CertificationsPostResponse, CreateCertificationApiV1CertificationsPostError, Options<CreateCertificationApiV1CertificationsPostData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createCertificationApiV1CertificationsPost({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Delete Certification
+ *
+ * Delete a certification record.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * cert_id: The UUID of the certification to delete.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected certification service.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the certification is not found.
+ */
+export const deleteCertificationApiV1CertificationsCertIdDeleteMutation = (options?: Partial<Options<DeleteCertificationApiV1CertificationsCertIdDeleteData>>): UseMutationOptions<DeleteCertificationApiV1CertificationsCertIdDeleteResponse, DeleteCertificationApiV1CertificationsCertIdDeleteError, Options<DeleteCertificationApiV1CertificationsCertIdDeleteData>> => {
+    const mutationOptions: UseMutationOptions<DeleteCertificationApiV1CertificationsCertIdDeleteResponse, DeleteCertificationApiV1CertificationsCertIdDeleteError, Options<DeleteCertificationApiV1CertificationsCertIdDeleteData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await deleteCertificationApiV1CertificationsCertIdDelete({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getCertificationApiV1CertificationsCertIdGetQueryKey = (options: Options<GetCertificationApiV1CertificationsCertIdGetData>) => createQueryKey('getCertificationApiV1CertificationsCertIdGet', options);
+
+/**
+ * Get Certification
+ *
+ * Retrieve a single certification by its UUID.
+ *
+ * Args:
+ * cert_id: The UUID primary key of the certification.
+ * db: Active async database session.
+ * service: Injected certification service.
+ *
+ * Returns:
+ * The requested :class:`~app.schemas.certification.CertificationResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the certification is not found.
+ */
+export const getCertificationApiV1CertificationsCertIdGetOptions = (options: Options<GetCertificationApiV1CertificationsCertIdGetData>) => queryOptions<GetCertificationApiV1CertificationsCertIdGetResponse, GetCertificationApiV1CertificationsCertIdGetError, GetCertificationApiV1CertificationsCertIdGetResponse, ReturnType<typeof getCertificationApiV1CertificationsCertIdGetQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getCertificationApiV1CertificationsCertIdGet({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getCertificationApiV1CertificationsCertIdGetQueryKey(options)
+});
+
+/**
+ * Update Certification
+ *
+ * Update an existing certification record.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * cert_id: The UUID of the certification to update.
+ * data: The certification update payload (partial).
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected certification service.
+ *
+ * Returns:
+ * The updated :class:`~app.schemas.certification.CertificationResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the certification is not found.
+ */
+export const updateCertificationApiV1CertificationsCertIdPatchMutation = (options?: Partial<Options<UpdateCertificationApiV1CertificationsCertIdPatchData>>): UseMutationOptions<UpdateCertificationApiV1CertificationsCertIdPatchResponse, UpdateCertificationApiV1CertificationsCertIdPatchError, Options<UpdateCertificationApiV1CertificationsCertIdPatchData>> => {
+    const mutationOptions: UseMutationOptions<UpdateCertificationApiV1CertificationsCertIdPatchResponse, UpdateCertificationApiV1CertificationsCertIdPatchError, Options<UpdateCertificationApiV1CertificationsCertIdPatchData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateCertificationApiV1CertificationsCertIdPatch({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

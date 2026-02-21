@@ -170,6 +170,12 @@ tasks:
         cmds:
             - docker exec -it portfolio_db psql -U portfolio -d portfolio
 
+    db:seed:
+        desc: Seed the database with the initial superuser
+        dir: "{{.BACKEND_DIR}}"
+        cmds:
+            - uv run python scripts/seed_admin.py
+
     # =============================================================================
     # TESTS
     # =============================================================================

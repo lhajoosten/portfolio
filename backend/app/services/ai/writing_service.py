@@ -1,3 +1,9 @@
+"""AI writing assistant service.
+
+This module provides the :class:`WritingService` which orchestrates calls
+to the OpenAI-compatible API for generating, improving, and summarising text.
+"""
+
 from collections.abc import AsyncGenerator
 from typing import TYPE_CHECKING
 
@@ -24,10 +30,32 @@ PROMPT_MAP = {
 
 
 class WritingService:
+    """Service layer for AI writing assistance."""
+
     def __init__(self, client: AsyncOpenAI) -> None:
+        """Initialise the writing service.
+
+        Args:
+            client: The configured async OpenAI client.
+        """
         self.client = client
 
     async def stream(self, request: WriteRequest) -> AsyncGenerator[str, None]:
+        """Stream an AI response based on the requested mode and prompt.
+
+        Constructs the appropriate system prompt and user messages, then
+        streams the completion chunks back to the caller.
+
+        Args:
+            request: The :class:`~app.schemas.ai.WriteRequest` containing
+                the mode, prompt, and optional context.
+
+        Yields:
+            String chunks of the generated text as they arrive from the API.
+
+        Raises:
+            AIServiceError: If the underlying API call fails.
+        """
         system_prompt = PROMPT_MAP[request.mode.value]
         messages: list[ChatCompletionMessageParam] = [{"role": "system", "content": system_prompt}]
         if request.context:

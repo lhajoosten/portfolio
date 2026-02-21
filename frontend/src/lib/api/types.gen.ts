@@ -5,6 +5,154 @@ export type ClientOptions = {
 };
 
 /**
+ * CertificationCreate
+ *
+ * Schema for creating a new certification record.
+ */
+export type CertificationCreate = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Issuer
+     */
+    issuer: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Issued At
+     */
+    issued_at: string;
+    /**
+     * Expires At
+     */
+    expires_at?: string | null;
+    /**
+     * Credential Id
+     */
+    credential_id?: string | null;
+    /**
+     * Credential Url
+     */
+    credential_url?: string | null;
+    /**
+     * Badge Image Url
+     */
+    badge_image_url?: string | null;
+    /**
+     * Featured
+     */
+    featured?: boolean;
+};
+
+/**
+ * CertificationResponse
+ *
+ * Schema for returning a certification in API responses.
+ *
+ * Includes database-generated fields like ``id`` and timestamps.
+ */
+export type CertificationResponse = {
+    /**
+     * Name
+     */
+    name: string;
+    /**
+     * Issuer
+     */
+    issuer: string;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Issued At
+     */
+    issued_at: string;
+    /**
+     * Expires At
+     */
+    expires_at?: string | null;
+    /**
+     * Credential Id
+     */
+    credential_id?: string | null;
+    /**
+     * Credential Url
+     */
+    credential_url?: string | null;
+    /**
+     * Badge Image Url
+     */
+    badge_image_url?: string | null;
+    /**
+     * Featured
+     */
+    featured?: boolean;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
+ * CertificationUpdate
+ *
+ * Schema for updating an existing certification record.
+ *
+ * All fields are optional. Only provided fields will be updated.
+ */
+export type CertificationUpdate = {
+    /**
+     * Name
+     */
+    name?: string | null;
+    /**
+     * Issuer
+     */
+    issuer?: string | null;
+    /**
+     * Description
+     */
+    description?: string | null;
+    /**
+     * Issued At
+     */
+    issued_at?: string | null;
+    /**
+     * Expires At
+     */
+    expires_at?: string | null;
+    /**
+     * Credential Id
+     */
+    credential_id?: string | null;
+    /**
+     * Credential Url
+     */
+    credential_url?: string | null;
+    /**
+     * Badge Image Url
+     */
+    badge_image_url?: string | null;
+    /**
+     * Featured
+     */
+    featured?: boolean | null;
+};
+
+/**
  * HTTPValidationError
  */
 export type HttpValidationError = {
@@ -16,6 +164,8 @@ export type HttpValidationError = {
 
 /**
  * LoginRequest
+ *
+ * Schema for login credentials.
  */
 export type LoginRequest = {
     /**
@@ -29,7 +179,151 @@ export type LoginRequest = {
 };
 
 /**
+ * PostCreate
+ *
+ * Schema for creating a new blog post.
+ *
+ * If a ``slug`` is not provided, one is automatically generated from the
+ * ``title`` field.
+ */
+export type PostCreate = {
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Excerpt
+     */
+    excerpt: string;
+    /**
+     * Body
+     */
+    body?: string | null;
+    /**
+     * Tags
+     */
+    tags?: Array<string>;
+    /**
+     * Cover Image Url
+     */
+    cover_image_url?: string | null;
+    /**
+     * Published
+     */
+    published?: boolean;
+    /**
+     * Reading Time Minutes
+     */
+    reading_time_minutes?: number | null;
+    /**
+     * Slug
+     */
+    slug?: string | null;
+};
+
+/**
+ * PostResponse
+ *
+ * Schema for returning a blog post in API responses.
+ *
+ * Includes database-generated fields like ``id``, ``slug``, and timestamps.
+ */
+export type PostResponse = {
+    /**
+     * Title
+     */
+    title: string;
+    /**
+     * Excerpt
+     */
+    excerpt: string;
+    /**
+     * Body
+     */
+    body?: string | null;
+    /**
+     * Tags
+     */
+    tags?: Array<string>;
+    /**
+     * Cover Image Url
+     */
+    cover_image_url?: string | null;
+    /**
+     * Published
+     */
+    published?: boolean;
+    /**
+     * Reading Time Minutes
+     */
+    reading_time_minutes?: number | null;
+    /**
+     * Id
+     */
+    id: string;
+    /**
+     * Slug
+     */
+    slug: string;
+    /**
+     * Created At
+     */
+    created_at: string;
+    /**
+     * Updated At
+     */
+    updated_at: string;
+};
+
+/**
+ * PostUpdate
+ *
+ * Schema for updating an existing blog post.
+ *
+ * All fields are optional. Only provided fields will be updated.
+ */
+export type PostUpdate = {
+    /**
+     * Title
+     */
+    title?: string | null;
+    /**
+     * Slug
+     */
+    slug?: string | null;
+    /**
+     * Excerpt
+     */
+    excerpt?: string | null;
+    /**
+     * Body
+     */
+    body?: string | null;
+    /**
+     * Tags
+     */
+    tags?: Array<string> | null;
+    /**
+     * Cover Image Url
+     */
+    cover_image_url?: string | null;
+    /**
+     * Published
+     */
+    published?: boolean | null;
+    /**
+     * Reading Time Minutes
+     */
+    reading_time_minutes?: number | null;
+};
+
+/**
  * ProjectCreate
+ *
+ * Schema for creating a new project.
+ *
+ * If a ``slug`` is not provided, one is automatically generated from the
+ * ``title`` field.
  */
 export type ProjectCreate = {
     /**
@@ -84,6 +378,10 @@ export type ProjectCreate = {
 
 /**
  * ProjectResponse
+ *
+ * Schema for returning a project in API responses.
+ *
+ * Includes database-generated fields like ``id``, ``slug``, and timestamps.
  */
 export type ProjectResponse = {
     /**
@@ -150,6 +448,10 @@ export type ProjectResponse = {
 
 /**
  * ProjectUpdate
+ *
+ * Schema for updating an existing project.
+ *
+ * All fields are optional. Only provided fields will be updated.
  */
 export type ProjectUpdate = {
     /**
@@ -204,6 +506,8 @@ export type ProjectUpdate = {
 
 /**
  * TokenResponse
+ *
+ * Schema for returning a JWT access token.
  */
 export type TokenResponse = {
     /**
@@ -218,6 +522,11 @@ export type TokenResponse = {
 
 /**
  * UserResponse
+ *
+ * Schema for returning a user profile.
+ *
+ * The ``hashed_password`` field is deliberately excluded from this schema
+ * so it is never accidentally leaked in API responses.
  */
 export type UserResponse = {
     /**
@@ -458,6 +767,300 @@ export type UpdateProjectApiV1ProjectsSlugPatchResponses = {
 };
 
 export type UpdateProjectApiV1ProjectsSlugPatchResponse = UpdateProjectApiV1ProjectsSlugPatchResponses[keyof UpdateProjectApiV1ProjectsSlugPatchResponses];
+
+export type GetPostsApiV1PostsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Published Only
+         */
+        published_only?: boolean;
+    };
+    url: '/api/v1/posts/';
+};
+
+export type GetPostsApiV1PostsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetPostsApiV1PostsGetError = GetPostsApiV1PostsGetErrors[keyof GetPostsApiV1PostsGetErrors];
+
+export type GetPostsApiV1PostsGetResponses = {
+    /**
+     * Response Get Posts Api V1 Posts  Get
+     *
+     * Successful Response
+     */
+    200: Array<PostResponse>;
+};
+
+export type GetPostsApiV1PostsGetResponse = GetPostsApiV1PostsGetResponses[keyof GetPostsApiV1PostsGetResponses];
+
+export type CreatePostApiV1PostsPostData = {
+    body: PostCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/posts/';
+};
+
+export type CreatePostApiV1PostsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreatePostApiV1PostsPostError = CreatePostApiV1PostsPostErrors[keyof CreatePostApiV1PostsPostErrors];
+
+export type CreatePostApiV1PostsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: PostResponse;
+};
+
+export type CreatePostApiV1PostsPostResponse = CreatePostApiV1PostsPostResponses[keyof CreatePostApiV1PostsPostResponses];
+
+export type DeletePostApiV1PostsSlugDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{slug}';
+};
+
+export type DeletePostApiV1PostsSlugDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeletePostApiV1PostsSlugDeleteError = DeletePostApiV1PostsSlugDeleteErrors[keyof DeletePostApiV1PostsSlugDeleteErrors];
+
+export type DeletePostApiV1PostsSlugDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeletePostApiV1PostsSlugDeleteResponse = DeletePostApiV1PostsSlugDeleteResponses[keyof DeletePostApiV1PostsSlugDeleteResponses];
+
+export type GetPostApiV1PostsSlugGetData = {
+    body?: never;
+    path: {
+        /**
+         * Slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{slug}';
+};
+
+export type GetPostApiV1PostsSlugGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetPostApiV1PostsSlugGetError = GetPostApiV1PostsSlugGetErrors[keyof GetPostApiV1PostsSlugGetErrors];
+
+export type GetPostApiV1PostsSlugGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: PostResponse;
+};
+
+export type GetPostApiV1PostsSlugGetResponse = GetPostApiV1PostsSlugGetResponses[keyof GetPostApiV1PostsSlugGetResponses];
+
+export type UpdatePostApiV1PostsSlugPatchData = {
+    body: PostUpdate;
+    path: {
+        /**
+         * Slug
+         */
+        slug: string;
+    };
+    query?: never;
+    url: '/api/v1/posts/{slug}';
+};
+
+export type UpdatePostApiV1PostsSlugPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdatePostApiV1PostsSlugPatchError = UpdatePostApiV1PostsSlugPatchErrors[keyof UpdatePostApiV1PostsSlugPatchErrors];
+
+export type UpdatePostApiV1PostsSlugPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: PostResponse;
+};
+
+export type UpdatePostApiV1PostsSlugPatchResponse = UpdatePostApiV1PostsSlugPatchResponses[keyof UpdatePostApiV1PostsSlugPatchResponses];
+
+export type GetCertificationsApiV1CertificationsGetData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Featured Only
+         */
+        featured_only?: boolean;
+    };
+    url: '/api/v1/certifications/';
+};
+
+export type GetCertificationsApiV1CertificationsGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetCertificationsApiV1CertificationsGetError = GetCertificationsApiV1CertificationsGetErrors[keyof GetCertificationsApiV1CertificationsGetErrors];
+
+export type GetCertificationsApiV1CertificationsGetResponses = {
+    /**
+     * Response Get Certifications Api V1 Certifications  Get
+     *
+     * Successful Response
+     */
+    200: Array<CertificationResponse>;
+};
+
+export type GetCertificationsApiV1CertificationsGetResponse = GetCertificationsApiV1CertificationsGetResponses[keyof GetCertificationsApiV1CertificationsGetResponses];
+
+export type CreateCertificationApiV1CertificationsPostData = {
+    body: CertificationCreate;
+    path?: never;
+    query?: never;
+    url: '/api/v1/certifications/';
+};
+
+export type CreateCertificationApiV1CertificationsPostErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type CreateCertificationApiV1CertificationsPostError = CreateCertificationApiV1CertificationsPostErrors[keyof CreateCertificationApiV1CertificationsPostErrors];
+
+export type CreateCertificationApiV1CertificationsPostResponses = {
+    /**
+     * Successful Response
+     */
+    201: CertificationResponse;
+};
+
+export type CreateCertificationApiV1CertificationsPostResponse = CreateCertificationApiV1CertificationsPostResponses[keyof CreateCertificationApiV1CertificationsPostResponses];
+
+export type DeleteCertificationApiV1CertificationsCertIdDeleteData = {
+    body?: never;
+    path: {
+        /**
+         * Cert Id
+         */
+        cert_id: string;
+    };
+    query?: never;
+    url: '/api/v1/certifications/{cert_id}';
+};
+
+export type DeleteCertificationApiV1CertificationsCertIdDeleteErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type DeleteCertificationApiV1CertificationsCertIdDeleteError = DeleteCertificationApiV1CertificationsCertIdDeleteErrors[keyof DeleteCertificationApiV1CertificationsCertIdDeleteErrors];
+
+export type DeleteCertificationApiV1CertificationsCertIdDeleteResponses = {
+    /**
+     * Successful Response
+     */
+    204: void;
+};
+
+export type DeleteCertificationApiV1CertificationsCertIdDeleteResponse = DeleteCertificationApiV1CertificationsCertIdDeleteResponses[keyof DeleteCertificationApiV1CertificationsCertIdDeleteResponses];
+
+export type GetCertificationApiV1CertificationsCertIdGetData = {
+    body?: never;
+    path: {
+        /**
+         * Cert Id
+         */
+        cert_id: string;
+    };
+    query?: never;
+    url: '/api/v1/certifications/{cert_id}';
+};
+
+export type GetCertificationApiV1CertificationsCertIdGetErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type GetCertificationApiV1CertificationsCertIdGetError = GetCertificationApiV1CertificationsCertIdGetErrors[keyof GetCertificationApiV1CertificationsCertIdGetErrors];
+
+export type GetCertificationApiV1CertificationsCertIdGetResponses = {
+    /**
+     * Successful Response
+     */
+    200: CertificationResponse;
+};
+
+export type GetCertificationApiV1CertificationsCertIdGetResponse = GetCertificationApiV1CertificationsCertIdGetResponses[keyof GetCertificationApiV1CertificationsCertIdGetResponses];
+
+export type UpdateCertificationApiV1CertificationsCertIdPatchData = {
+    body: CertificationUpdate;
+    path: {
+        /**
+         * Cert Id
+         */
+        cert_id: string;
+    };
+    query?: never;
+    url: '/api/v1/certifications/{cert_id}';
+};
+
+export type UpdateCertificationApiV1CertificationsCertIdPatchErrors = {
+    /**
+     * Validation Error
+     */
+    422: HttpValidationError;
+};
+
+export type UpdateCertificationApiV1CertificationsCertIdPatchError = UpdateCertificationApiV1CertificationsCertIdPatchErrors[keyof UpdateCertificationApiV1CertificationsCertIdPatchErrors];
+
+export type UpdateCertificationApiV1CertificationsCertIdPatchResponses = {
+    /**
+     * Successful Response
+     */
+    200: CertificationResponse;
+};
+
+export type UpdateCertificationApiV1CertificationsCertIdPatchResponse = UpdateCertificationApiV1CertificationsCertIdPatchResponses[keyof UpdateCertificationApiV1CertificationsCertIdPatchResponses];
 
 export type AiWriteApiV1AiWritePostData = {
     body: WriteRequest;

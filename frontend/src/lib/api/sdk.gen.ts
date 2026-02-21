@@ -2,7 +2,7 @@
 
 import type { Client, Options as Options2, TDataShape } from './client';
 import { client } from './client.gen';
-import type { AiWriteApiV1AiWritePostData, AiWriteApiV1AiWritePostErrors, AiWriteApiV1AiWritePostResponses, CreateProjectApiV1ProjectsPostData, CreateProjectApiV1ProjectsPostErrors, CreateProjectApiV1ProjectsPostResponses, DeleteProjectApiV1ProjectsSlugDeleteData, DeleteProjectApiV1ProjectsSlugDeleteErrors, DeleteProjectApiV1ProjectsSlugDeleteResponses, GetFeaturedProjectsApiV1ProjectsFeaturedGetData, GetFeaturedProjectsApiV1ProjectsFeaturedGetResponses, GetProjectApiV1ProjectsSlugGetData, GetProjectApiV1ProjectsSlugGetErrors, GetProjectApiV1ProjectsSlugGetResponses, GetProjectsApiV1ProjectsGetData, GetProjectsApiV1ProjectsGetErrors, GetProjectsApiV1ProjectsGetResponses, HealthHealthGetData, HealthHealthGetResponses, LoginApiV1AuthLoginPostData, LoginApiV1AuthLoginPostErrors, LoginApiV1AuthLoginPostResponses, LogoutApiV1AuthLogoutPostData, LogoutApiV1AuthLogoutPostErrors, LogoutApiV1AuthLogoutPostResponses, MeApiV1AuthMeGetData, MeApiV1AuthMeGetErrors, MeApiV1AuthMeGetResponses, UpdateProjectApiV1ProjectsSlugPatchData, UpdateProjectApiV1ProjectsSlugPatchErrors, UpdateProjectApiV1ProjectsSlugPatchResponses } from './types.gen';
+import type { AiWriteApiV1AiWritePostData, AiWriteApiV1AiWritePostErrors, AiWriteApiV1AiWritePostResponses, CreateCertificationApiV1CertificationsPostData, CreateCertificationApiV1CertificationsPostErrors, CreateCertificationApiV1CertificationsPostResponses, CreatePostApiV1PostsPostData, CreatePostApiV1PostsPostErrors, CreatePostApiV1PostsPostResponses, CreateProjectApiV1ProjectsPostData, CreateProjectApiV1ProjectsPostErrors, CreateProjectApiV1ProjectsPostResponses, DeleteCertificationApiV1CertificationsCertIdDeleteData, DeleteCertificationApiV1CertificationsCertIdDeleteErrors, DeleteCertificationApiV1CertificationsCertIdDeleteResponses, DeletePostApiV1PostsSlugDeleteData, DeletePostApiV1PostsSlugDeleteErrors, DeletePostApiV1PostsSlugDeleteResponses, DeleteProjectApiV1ProjectsSlugDeleteData, DeleteProjectApiV1ProjectsSlugDeleteErrors, DeleteProjectApiV1ProjectsSlugDeleteResponses, GetCertificationApiV1CertificationsCertIdGetData, GetCertificationApiV1CertificationsCertIdGetErrors, GetCertificationApiV1CertificationsCertIdGetResponses, GetCertificationsApiV1CertificationsGetData, GetCertificationsApiV1CertificationsGetErrors, GetCertificationsApiV1CertificationsGetResponses, GetFeaturedProjectsApiV1ProjectsFeaturedGetData, GetFeaturedProjectsApiV1ProjectsFeaturedGetResponses, GetPostApiV1PostsSlugGetData, GetPostApiV1PostsSlugGetErrors, GetPostApiV1PostsSlugGetResponses, GetPostsApiV1PostsGetData, GetPostsApiV1PostsGetErrors, GetPostsApiV1PostsGetResponses, GetProjectApiV1ProjectsSlugGetData, GetProjectApiV1ProjectsSlugGetErrors, GetProjectApiV1ProjectsSlugGetResponses, GetProjectsApiV1ProjectsGetData, GetProjectsApiV1ProjectsGetErrors, GetProjectsApiV1ProjectsGetResponses, HealthHealthGetData, HealthHealthGetResponses, LoginApiV1AuthLoginPostData, LoginApiV1AuthLoginPostErrors, LoginApiV1AuthLoginPostResponses, LogoutApiV1AuthLogoutPostData, LogoutApiV1AuthLogoutPostErrors, LogoutApiV1AuthLogoutPostResponses, MeApiV1AuthMeGetData, MeApiV1AuthMeGetErrors, MeApiV1AuthMeGetResponses, UpdateCertificationApiV1CertificationsCertIdPatchData, UpdateCertificationApiV1CertificationsCertIdPatchErrors, UpdateCertificationApiV1CertificationsCertIdPatchResponses, UpdatePostApiV1PostsSlugPatchData, UpdatePostApiV1PostsSlugPatchErrors, UpdatePostApiV1PostsSlugPatchResponses, UpdateProjectApiV1ProjectsSlugPatchData, UpdateProjectApiV1ProjectsSlugPatchErrors, UpdateProjectApiV1ProjectsSlugPatchResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean> = Options2<TData, ThrowOnError> & {
     /**
@@ -20,11 +20,38 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 
 /**
  * Get Projects
+ *
+ * Retrieve a list of projects.
+ *
+ * Args:
+ * published_only: If ``True``, returns only published projects.
+ * Defaults to ``True``.
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Returns:
+ * A list of :class:`~app.schemas.project.ProjectResponse` objects.
  */
 export const getProjectsApiV1ProjectsGet = <ThrowOnError extends boolean = false>(options?: Options<GetProjectsApiV1ProjectsGetData, ThrowOnError>) => (options?.client ?? client).get<GetProjectsApiV1ProjectsGetResponses, GetProjectsApiV1ProjectsGetErrors, ThrowOnError>({ url: '/api/v1/projects/', ...options });
 
 /**
  * Create Project
+ *
+ * Create a new project.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * data: The project creation payload.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Returns:
+ * The newly created :class:`~app.schemas.project.ProjectResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 409 if a project with the same slug already exists.
  */
 export const createProjectApiV1ProjectsPost = <ThrowOnError extends boolean = false>(options: Options<CreateProjectApiV1ProjectsPostData, ThrowOnError>) => (options.client ?? client).post<CreateProjectApiV1ProjectsPostResponses, CreateProjectApiV1ProjectsPostErrors, ThrowOnError>({
     url: '/api/v1/projects/',
@@ -37,24 +64,294 @@ export const createProjectApiV1ProjectsPost = <ThrowOnError extends boolean = fa
 
 /**
  * Get Featured Projects
+ *
+ * Retrieve a list of featured, published projects.
+ *
+ * Args:
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Returns:
+ * A list of :class:`~app.schemas.project.ProjectResponse` objects.
  */
 export const getFeaturedProjectsApiV1ProjectsFeaturedGet = <ThrowOnError extends boolean = false>(options?: Options<GetFeaturedProjectsApiV1ProjectsFeaturedGetData, ThrowOnError>) => (options?.client ?? client).get<GetFeaturedProjectsApiV1ProjectsFeaturedGetResponses, unknown, ThrowOnError>({ url: '/api/v1/projects/featured', ...options });
 
 /**
  * Delete Project
+ *
+ * Delete a project.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * slug: The unique URL slug of the project to delete.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the project is not found.
  */
 export const deleteProjectApiV1ProjectsSlugDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteProjectApiV1ProjectsSlugDeleteData, ThrowOnError>) => (options.client ?? client).delete<DeleteProjectApiV1ProjectsSlugDeleteResponses, DeleteProjectApiV1ProjectsSlugDeleteErrors, ThrowOnError>({ url: '/api/v1/projects/{slug}', ...options });
 
 /**
  * Get Project
+ *
+ * Retrieve a single project by its slug.
+ *
+ * Args:
+ * slug: The unique URL slug of the project.
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Returns:
+ * The requested :class:`~app.schemas.project.ProjectResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the project is not found.
  */
 export const getProjectApiV1ProjectsSlugGet = <ThrowOnError extends boolean = false>(options: Options<GetProjectApiV1ProjectsSlugGetData, ThrowOnError>) => (options.client ?? client).get<GetProjectApiV1ProjectsSlugGetResponses, GetProjectApiV1ProjectsSlugGetErrors, ThrowOnError>({ url: '/api/v1/projects/{slug}', ...options });
 
 /**
  * Update Project
+ *
+ * Update an existing project.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * slug: The unique URL slug of the project to update.
+ * data: The project update payload (partial).
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected project service.
+ *
+ * Returns:
+ * The updated :class:`~app.schemas.project.ProjectResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the project is not found.
+ * HTTPException: HTTP 409 if updating the slug causes a collision.
  */
 export const updateProjectApiV1ProjectsSlugPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateProjectApiV1ProjectsSlugPatchData, ThrowOnError>) => (options.client ?? client).patch<UpdateProjectApiV1ProjectsSlugPatchResponses, UpdateProjectApiV1ProjectsSlugPatchErrors, ThrowOnError>({
     url: '/api/v1/projects/{slug}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Posts
+ *
+ * Retrieve a list of blog posts.
+ *
+ * Args:
+ * published_only: If ``True``, returns only published posts.
+ * Defaults to ``True``.
+ * db: Active async database session.
+ * service: Injected post service.
+ *
+ * Returns:
+ * A list of :class:`~app.schemas.post.PostResponse` objects ordered
+ * by ``created_at`` descending (newest first).
+ */
+export const getPostsApiV1PostsGet = <ThrowOnError extends boolean = false>(options?: Options<GetPostsApiV1PostsGetData, ThrowOnError>) => (options?.client ?? client).get<GetPostsApiV1PostsGetResponses, GetPostsApiV1PostsGetErrors, ThrowOnError>({ url: '/api/v1/posts/', ...options });
+
+/**
+ * Create Post
+ *
+ * Create a new blog post.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * data: The post creation payload.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected post service.
+ *
+ * Returns:
+ * The newly created :class:`~app.schemas.post.PostResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 409 if a post with the same slug already exists.
+ */
+export const createPostApiV1PostsPost = <ThrowOnError extends boolean = false>(options: Options<CreatePostApiV1PostsPostData, ThrowOnError>) => (options.client ?? client).post<CreatePostApiV1PostsPostResponses, CreatePostApiV1PostsPostErrors, ThrowOnError>({
+    url: '/api/v1/posts/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Post
+ *
+ * Delete a blog post.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * slug: The unique URL slug of the post to delete.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected post service.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the post is not found.
+ */
+export const deletePostApiV1PostsSlugDelete = <ThrowOnError extends boolean = false>(options: Options<DeletePostApiV1PostsSlugDeleteData, ThrowOnError>) => (options.client ?? client).delete<DeletePostApiV1PostsSlugDeleteResponses, DeletePostApiV1PostsSlugDeleteErrors, ThrowOnError>({ url: '/api/v1/posts/{slug}', ...options });
+
+/**
+ * Get Post
+ *
+ * Retrieve a single blog post by its slug.
+ *
+ * Args:
+ * slug: The unique URL slug of the post.
+ * db: Active async database session.
+ * service: Injected post service.
+ *
+ * Returns:
+ * The requested :class:`~app.schemas.post.PostResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the post is not found.
+ */
+export const getPostApiV1PostsSlugGet = <ThrowOnError extends boolean = false>(options: Options<GetPostApiV1PostsSlugGetData, ThrowOnError>) => (options.client ?? client).get<GetPostApiV1PostsSlugGetResponses, GetPostApiV1PostsSlugGetErrors, ThrowOnError>({ url: '/api/v1/posts/{slug}', ...options });
+
+/**
+ * Update Post
+ *
+ * Update an existing blog post.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * slug: The unique URL slug of the post to update.
+ * data: The post update payload (partial).
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected post service.
+ *
+ * Returns:
+ * The updated :class:`~app.schemas.post.PostResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the post is not found.
+ */
+export const updatePostApiV1PostsSlugPatch = <ThrowOnError extends boolean = false>(options: Options<UpdatePostApiV1PostsSlugPatchData, ThrowOnError>) => (options.client ?? client).patch<UpdatePostApiV1PostsSlugPatchResponses, UpdatePostApiV1PostsSlugPatchErrors, ThrowOnError>({
+    url: '/api/v1/posts/{slug}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get Certifications
+ *
+ * Retrieve a list of certifications.
+ *
+ * Args:
+ * featured_only: If ``True``, returns only featured certifications.
+ * Defaults to ``False`` (return all certifications).
+ * db: Active async database session.
+ * service: Injected certification service.
+ *
+ * Returns:
+ * A list of :class:`~app.schemas.certification.CertificationResponse`
+ * objects ordered by ``issued_at`` descending (most recent first).
+ */
+export const getCertificationsApiV1CertificationsGet = <ThrowOnError extends boolean = false>(options?: Options<GetCertificationsApiV1CertificationsGetData, ThrowOnError>) => (options?.client ?? client).get<GetCertificationsApiV1CertificationsGetResponses, GetCertificationsApiV1CertificationsGetErrors, ThrowOnError>({ url: '/api/v1/certifications/', ...options });
+
+/**
+ * Create Certification
+ *
+ * Create a new certification record.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * data: The certification creation payload.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected certification service.
+ *
+ * Returns:
+ * The newly created :class:`~app.schemas.certification.CertificationResponse`.
+ */
+export const createCertificationApiV1CertificationsPost = <ThrowOnError extends boolean = false>(options: Options<CreateCertificationApiV1CertificationsPostData, ThrowOnError>) => (options.client ?? client).post<CreateCertificationApiV1CertificationsPostResponses, CreateCertificationApiV1CertificationsPostErrors, ThrowOnError>({
+    url: '/api/v1/certifications/',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Delete Certification
+ *
+ * Delete a certification record.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * cert_id: The UUID of the certification to delete.
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected certification service.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the certification is not found.
+ */
+export const deleteCertificationApiV1CertificationsCertIdDelete = <ThrowOnError extends boolean = false>(options: Options<DeleteCertificationApiV1CertificationsCertIdDeleteData, ThrowOnError>) => (options.client ?? client).delete<DeleteCertificationApiV1CertificationsCertIdDeleteResponses, DeleteCertificationApiV1CertificationsCertIdDeleteErrors, ThrowOnError>({ url: '/api/v1/certifications/{cert_id}', ...options });
+
+/**
+ * Get Certification
+ *
+ * Retrieve a single certification by its UUID.
+ *
+ * Args:
+ * cert_id: The UUID primary key of the certification.
+ * db: Active async database session.
+ * service: Injected certification service.
+ *
+ * Returns:
+ * The requested :class:`~app.schemas.certification.CertificationResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the certification is not found.
+ */
+export const getCertificationApiV1CertificationsCertIdGet = <ThrowOnError extends boolean = false>(options: Options<GetCertificationApiV1CertificationsCertIdGetData, ThrowOnError>) => (options.client ?? client).get<GetCertificationApiV1CertificationsCertIdGetResponses, GetCertificationApiV1CertificationsCertIdGetErrors, ThrowOnError>({ url: '/api/v1/certifications/{cert_id}', ...options });
+
+/**
+ * Update Certification
+ *
+ * Update an existing certification record.
+ *
+ * Requires superuser privileges.
+ *
+ * Args:
+ * cert_id: The UUID of the certification to update.
+ * data: The certification update payload (partial).
+ * _: Superuser dependency guard.
+ * db: Active async database session.
+ * service: Injected certification service.
+ *
+ * Returns:
+ * The updated :class:`~app.schemas.certification.CertificationResponse`.
+ *
+ * Raises:
+ * HTTPException: HTTP 404 if the certification is not found.
+ */
+export const updateCertificationApiV1CertificationsCertIdPatch = <ThrowOnError extends boolean = false>(options: Options<UpdateCertificationApiV1CertificationsCertIdPatchData, ThrowOnError>) => (options.client ?? client).patch<UpdateCertificationApiV1CertificationsCertIdPatchResponses, UpdateCertificationApiV1CertificationsCertIdPatchErrors, ThrowOnError>({
+    url: '/api/v1/certifications/{cert_id}',
     ...options,
     headers: {
         'Content-Type': 'application/json',

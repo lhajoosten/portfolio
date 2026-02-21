@@ -1,6 +1,6 @@
-"""Pydantic schemas for the Projects domain.
+"""Pydantic schemas for the Posts / Blog domain.
 
-These schemas define the request and response shapes for the project API
+These schemas define the request and response shapes for the post API
 endpoints, handling validation and serialisation.
 """
 
@@ -11,24 +11,20 @@ from uuid import UUID
 from pydantic import BaseModel, ValidationInfo, field_validator
 
 
-class ProjectBase(BaseModel):
-    """Base schema containing common fields for a project."""
+class PostBase(BaseModel):
+    """Base schema containing common fields for a blog post."""
 
     title: str
-    description: str
-    content: str | None = None
+    excerpt: str
+    body: str | None = None
     tags: list[str] = []
-    tech_stack: list[str] = []
-    live_url: str | None = None
-    repo_url: str | None = None
-    image_url: str | None = None
-    featured: bool = False
+    cover_image_url: str | None = None
     published: bool = False
-    order: int = 0
+    reading_time_minutes: int | None = None
 
 
-class ProjectCreate(ProjectBase):
-    """Schema for creating a new project.
+class PostCreate(PostBase):
+    """Schema for creating a new blog post.
 
     If a ``slug`` is not provided, one is automatically generated from the
     ``title`` field.
@@ -46,28 +42,24 @@ class ProjectCreate(ProjectBase):
         return re.sub(r"[^a-z0-9-]", "-", title.lower()).strip("-")
 
 
-class ProjectUpdate(BaseModel):
-    """Schema for updating an existing project.
+class PostUpdate(BaseModel):
+    """Schema for updating an existing blog post.
 
     All fields are optional. Only provided fields will be updated.
     """
 
     title: str | None = None
     slug: str | None = None
-    description: str | None = None
-    content: str | None = None
+    excerpt: str | None = None
+    body: str | None = None
     tags: list[str] | None = None
-    tech_stack: list[str] | None = None
-    live_url: str | None = None
-    repo_url: str | None = None
-    image_url: str | None = None
-    featured: bool | None = None
+    cover_image_url: str | None = None
     published: bool | None = None
-    order: int | None = None
+    reading_time_minutes: int | None = None
 
 
-class ProjectResponse(ProjectBase):
-    """Schema for returning a project in API responses.
+class PostResponse(PostBase):
+    """Schema for returning a blog post in API responses.
 
     Includes database-generated fields like ``id``, ``slug``, and timestamps.
     """

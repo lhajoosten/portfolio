@@ -1,15 +1,232 @@
+/* ── GOOGLE FONTS ───────────────────────────────────────────── */
+@import url("https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Mono:wght@300;400;500&family=Cabinet+Grotesk:wght@300;400;500;700;800&display=swap");
+
 @import "tailwindcss";
 @plugin "@tailwindcss/typography";
 
+/* ── DESIGN TOKENS ──────────────────────────────────────────── */
+:root {
+  --bg: #0a0a0b;
+  --surface: #111113;
+  --surface2: #18181c;
+  --border: rgba(255, 255, 255, 0.07);
+  --border2: rgba(255, 255, 255, 0.12);
+  --text: #f0eee8;
+  --muted: #6b6a72;
+  --accent: #c8ff47;
+  --accent2: #3d5afe;
+  --danger: #ff4d4d;
+  --warn: #ffb020;
+
+  --r-sm: 6px;
+  --r-md: 12px;
+  --r-lg: 20px;
+
+  --font-display: "DM Serif Display", Georgia, serif;
+  --font-body: "Cabinet Grotesk", system-ui, sans-serif;
+  --font-mono: "DM Mono", "JetBrains Mono", monospace;
+
+  --nav-h: 64px;
+  --sidebar-w: 240px;
+}
+
+/* ── TAILWIND THEME EXTENSION ───────────────────────────────── */
+@theme {
+  --font-display: "DM Serif Display", Georgia, serif;
+  --font-body: "Cabinet Grotesk", system-ui, sans-serif;
+  --font-mono: "DM Mono", "JetBrains Mono", monospace;
+
+  --color-bg: #0a0a0b;
+  --color-surface: #111113;
+  --color-surface2: #18181c;
+  --color-text: #f0eee8;
+  --color-muted: #6b6a72;
+  --color-accent: #c8ff47;
+  --color-accent2: #3d5afe;
+  --color-danger: #ff4d4d;
+  --color-warn: #ffb020;
+}
+
+/* ── GLOBAL BASE ────────────────────────────────────────────── */
 @layer base {
-  * {
-    border-color: theme(colors.zinc.800);
+  *,
+  *::before,
+  *::after {
+    box-sizing: border-box;
   }
+
+  html {
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
   body {
-    @apply bg-zinc-950 text-zinc-100 antialiased;
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* Noise texture overlay */
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+    pointer-events: none;
+    z-index: 999;
+    opacity: 0.35;
   }
 }
 
-@theme {
-  --font-mono: "JetBrains Mono", "Fira Code", monospace;
+/* ── TYPOGRAPHY HELPERS ─────────────────────────────────────── */
+@layer utilities {
+  .font-display {
+    font-family: var(--font-display);
+  }
+
+  .font-body {
+    font-family: var(--font-body);
+  }
+
+  /* Scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+  }
+  ::-webkit-scrollbar-track {
+    background: var(--surface);
+  }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+  }
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.18);
+  }
+}
+
+/* ── ANIMATIONS ─────────────────────────────────────────────── */
+@keyframes scroll-down {
+  0%,
+  100% {
+    opacity: 0.3;
+    transform: scaleY(0.6);
+  }
+  50% {
+    opacity: 1;
+    transform: scaleY(1);
+  }
+}
+
+@keyframes pulse-dot {
+  0%,
+  100% {
+    opacity: 0.4;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes blink-cursor {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@layer utilities {
+  .animate-scroll-down {
+    animation: scroll-down 2s ease-in-out infinite;
+  }
+  .animate-pulse-dot {
+    animation: pulse-dot 2s ease-in-out infinite;
+  }
+  .animate-blink-cursor {
+    animation: blink-cursor 1s step-end infinite;
+  }
+  .animate-fade-in {
+    animation: fade-in 0.4s ease-out both;
+  }
+}
+
+/* ── PROSE OVERRIDES (blog body) ────────────────────────────── */
+@layer components {
+  .prose-portfolio {
+    color: var(--muted);
+    font-family: var(--font-body);
+    font-size: 16px;
+    line-height: 1.8;
+    max-width: 72ch;
+  }
+
+  .prose-portfolio h2,
+  .prose-portfolio h3 {
+    font-family: var(--font-display);
+    color: var(--text);
+    letter-spacing: -0.01em;
+  }
+
+  .prose-portfolio h2 {
+    font-size: 28px;
+    margin-bottom: 16px;
+  }
+  .prose-portfolio h3 {
+    font-size: 22px;
+    margin-bottom: 12px;
+  }
+
+  .prose-portfolio code {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--accent);
+    background: rgba(200, 255, 71, 0.08);
+    padding: 1px 6px;
+    border-radius: 4px;
+  }
+
+  .prose-portfolio pre {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--r-md);
+    padding: 20px 24px;
+    overflow-x: auto;
+  }
+
+  .prose-portfolio pre code {
+    background: transparent;
+    color: var(--text);
+    padding: 0;
+  }
+
+  .prose-portfolio a {
+    color: var(--accent);
+    text-decoration: underline;
+    text-underline-offset: 3px;
+  }
+
+  .prose-portfolio blockquote {
+    border-left: 3px solid var(--accent);
+    padding-left: 20px;
+    color: var(--muted);
+    font-style: italic;
+  }
 }
